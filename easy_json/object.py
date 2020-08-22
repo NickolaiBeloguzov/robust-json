@@ -15,9 +15,6 @@ from easy_json.__internal_utils import service
 #! Review documentation!!!
 
 
-#TODO Migrate from range(len(list)) to iterable (need more tests)
-# ^^ This can potentially reduce resource consumption and decrease runtime
-
 class JsonObjectParser:
     
     def __init__(self, json: dict):
@@ -202,10 +199,10 @@ class JsonObjectParser:
                     self.active_json = json_content
                     return json_content
                 else:
-                    for i in range(len(temp)):
-                        if type(temp[i]) == dict:
+                    for i in iter(temp):
+                        if type(i) == dict:
                             if type(append_value) == dict:
-                                temp[i].update(append_value)
+                                i.update(append_value)
                             else:
                                 raise TypeError(f'To append to a JSON array, parameter `append_value` must be a dictionary; got `{type(append_value).__name__}` instead.')
                     self.active_json = json_content
