@@ -1,0 +1,19 @@
+# Utility dirs
+/.vscode
+**/__pycache__
+
+# EGG files
+/*.egg-ingo
+/*.egg
+
+# Python Compiled files
+.pyc
+
+# Distribution package folder
+/dist/
+
+#Package build files
+/data_tests
+
+#Test files
+/test.py
