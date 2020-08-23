@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from easy_json.errors import IncorrectFunctionParameterTypeError, JSONObjectError
+from robust_json.errors import IncorrectFunctionParameterTypeError, JSONObjectError
 
 def filter_json_array(json_array: list, field: str, value: any) -> list:
         """
@@ -23,6 +23,7 @@ def filter_json_array(json_array: list, field: str, value: any) -> list:
 
         Filtering an array of objects by a specific key:value pair
 
+        >>> from robust_json.ext import filter_json_array
         >>> obj = [ { "order_id": 1648, "country": "USA" }, { "order_id": 1830, "country": "Liberia" }, { "order_id": 6703, "country": "USA" } ]
         >>> filtered  = filter_json_array(obj, 'country', 'USA')
         >>> filtered

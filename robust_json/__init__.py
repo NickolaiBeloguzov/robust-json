@@ -10,5 +10,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from easy_json.file import JsonFileParser
-from easy_json.object import JsonObjectParser
+from robust_json.file import JsonFileParser
+from robust_json.object import JsonObjectParser

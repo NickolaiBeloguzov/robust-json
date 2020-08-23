@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from easy_json.errors import IncorrectFunctionParameterTypeError
+from robust_json.errors import IncorrectFunctionParameterTypeError
 
 def reverse_array(array: list):
     if type(array) != list:

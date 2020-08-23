@@ -21,5 +21,5 @@ setuptools.setup(
     install_requires = [
         'jsonpath_ng'
     ],
-    description='A robust and easy-to-use JSON framework' # TODO Add a long description (lond_description property) from README.md 
+    description='Robust and easy-to-use framework for working with JSON' # TODO Add a long description (lond_description property) from README.md 
 )

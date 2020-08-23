@@ -12,7 +12,7 @@
 
 from typing import Union
 
-from easy_json.errors import IncorrectFunctionParameterTypeError
+from robust_json.errors import IncorrectFunctionParameterTypeError
 
 def get_item_index(item: any, array: list, always_array: bool = False) -> Union[int, list]:
     u"""
