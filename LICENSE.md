@@ -175,4 +175,4 @@
 
    END OF TERMS AND CONDITIONS
 
-   Copyright \[2020\] [Nickolai Beloguzov]
+   Copyright 2020 Nickolai Beloguzov

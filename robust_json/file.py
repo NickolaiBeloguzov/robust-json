@@ -11,7 +11,7 @@
 # limitations under the License.
 
 ################################
-# * This file contains `JsonObjectParser` class
+# * This file contains `JsonFileParser` class
 # * and all of its methods and properties
 ################################
 
@@ -26,38 +26,62 @@ import os.path
 from pathlib2 import Path
 
 # Other modules import
-from easy_json.errors import JSONFileError, JSONPathError, JSONObjectError, JSONStrictModeError, IncorrectFunctionParameterTypeError
-from easy_json.__internal_utils import service
+from robust_json.errors import JSONFileError, JSONPathError, JSONObjectError, JSONStrictModeError, IncorrectFunctionParameterTypeError
+from robust_json.__internal_utils import service
 
 #! Review documentation!!!
 
 
-class JsonObjectParser:
-    
-    def __init__(self, json: dict):
-
-        if type(json) != dict:
-            raise IncorrectFunctionParameterTypeError('json', 'dict', type(json).__name__)
-
-        self.__backup = json
-        self.active_json = json
+class JsonFileParser:
+    def __init__(self, path):
+        self.__path = path
+        self.__file_formats = ['.json', '.txt']
         self.__service = service()
+
+        if self.__service.check_file(self.__path, self.__file_formats):
+            self.active_json = self.get_json_from_file()
+            self.__backup = self.get_json_from_file()
+        else:
+            raise JSONFileError(f'Error parsing file `{self.path}`. Its content cannot be parsed.')
+
+    @property
+    def file_formats(self):
+        """
+        All file extensions supported by this module at the moment.
+        """
+        return  self.__file_formats
     
+    @property
+    def path(self):
+        """
+        Source file path
+        """
+        return self.__path
 
     @property
     def backup(self):
         """
-        Initial JSON object (without any recent changes).
+        The initial JSON object (without any recent changes).
         """
         return self.__backup
 
-    @property
-    def service(self):
+    def get_json_from_file(self) -> dict:
         """
-        `JsonObjectParser` class internal utils provider
+        Extract all JSON from source file.
+
+        This function will read the source file and return JSON from it
+        as a Python dictionary.
+
+        This function is automatically called when class is
+        initialized.
         """
 
-        return self.__service
+        file = open(self.__path, 'r')
+        cont = file.read()
+        file.close()
+
+        self.active_json = JSON.loads(cont)
+        return JSON.loads(cont)
 
     def get_key_value(self, json_path: str) -> any:
         """
@@ -75,18 +99,18 @@ class JsonObjectParser:
 
         Retrieving key:value pair from a simple object:
 
-        >>> from easy_json.object import JsonObjectParser
-        >>> obj = { "test_key": "test_value", "test_arr": [1, 2, 3] }
-        >>> op = JsonObjectParser(obj) # You can also pass dictionary directly
+        >>> from robust_json.file import JsonFileParser
+        >>> op = JsonFileParser('test_file.json')
+        # Object from `test_file.json` >> { "test_key": "test_value", "test_arr": [1, 2, 3] }
         >>> val = op.get_key_value('test_key')
         >>> val
         # val = 'test_value'
 
         Retrieving element from an array
 
-        >>> from easy_json.object import JsonObjectParser
-        >>> obj = { "test_key": "test_value", "test_arr": [1, 2, 3] }
-        >>> op = JsonObjectParser(obj) # You can also pass dictionary directly
+        >>> from robust_json.file import JsonFileParser
+        >>> op = JsonFileParser('test_file.json')
+        # Object from `test_file.json` >> { "test_key": "test_value", "test_arr": [1, 2, 3] }
         >>> arr_val = op.get_key_value('test_arr.[1]') # Path is equal to 'test_arr[1]'
         >>> arr_val
         # arr_val = 2
@@ -144,41 +168,42 @@ class JsonObjectParser:
 
         Adding a simple key:value pair to the root object:
 
-        >>> from easy_json.object import JsonObjectParser
-        >>> obj = { "key": "value" }
-        >>> op = JsonObjectParser(obj) # You can also pass dictionary directly
+        >>> from robust_json.file import JsonFileParser
+        >>> op = JsonFileParser('test.json')
+        # object from `test.json` >> { "key": "value" }
         >>> op.append('$', { 'test': 'test' })
         >>> op.active_json
         # Output: { "key": "value", "test": "test" }
 
         Adding a new JSON object to an array of objects:
 
-        >>> from easy_json.object import JsonObjectParser
-        >>> op = JsonObjectParser({ "users": [ {"id": 1, "name": "Ken"}, { "id": 2, "name": "Liza" } ] })
+        >>> from robust_json.file import JsonFileParser
+        >>> op = JsonFileParser('users.json')
+        # object from `users.json` >> { "users": [ {"id": 1, "name": "Ken"}, { "id": 2, "name": "Liza" } ] }
         >>> op.append('users', { 'id': 3, 'name': 'Nick' }, True)
         >>> op.active_json
         # Output: { "users": [ {"id": 1, "name": "Ken"}, { "id": 2, "name": "Liza" }, { "id": 3, "name": "Nick" } ] }
 
         Adding a key:value pair in each object of an array of objects
 
-        >>> from easy_json.object import JsonObjectParser
-        >>> obj = { "users": [ {"id": 1, "name": "Ken"}, { "id": 2, "name": "Liza" } ] }
-        >>> op = JsonObjectParser(obj) # You can also pass dictionary directly
+        >>> from robust_json.file import JsonFileParser
+        >>> op = JsonFileParser('users.json')
+        # object from `users.json` >> { "users": [ {"id": 1, "name": "Ken"}, { "id": 2, "name": "Liza" } ] }
         >>> op.append('users', { 'role': 'guest' })
         >>> op.active_json
         # Output: { "users": [ { "id": 1, "name": "Ken", "role": "guest" }, { "id": 2, "name": "Liza", "role": "guest" } ] }
 
         Adding a new element to an array of strings:
 
-        >>> from easy_json.object import JsonObjectParser
-        >>> obj = { "colors": [ "red", "blue" ] }
-        >>> op = JsonObjectParser(obj)
+        >>> from robust_json.file import JsonFileParser
+        >>> op = JsonFileParser('array.json')
+        # object from `array.json` >> { "colors": [ "red", "blue" ] }
         >>> op.append('colors', 'green')
         >>> op.active_json
         # Output: { "colors": [ "red", "blue" ] }
         # Nothing has appended. It's because this function tried to append given
         # value to each string in array and failed
-        # To fix this, you need to set `append_at_end` parameter to `True`
+        # To fix this, we need to set `append_at_end` parameter to `True`
         >>> op.append('colors', 'green', True)
         >>> op.active_json
         # Output: { "colors": [ "red", "blue", "green" ] } 
@@ -255,29 +280,29 @@ class JsonObjectParser:
 
         Updating key:value pair in a root of the object:
 
-        >>> from easy_json.object import JsonObjectParser
-        >>> obj = { "app_name": "Test App", "version": "1.0.5" }
-        >>> op = JsonObjectParser(obj)
+        >>> from robust_json.file import JsonFileParser
+        >>> op = JsonFileParser('simple.json')
+        # Object from `simple.json` >> { "app_name": "Test App", "version": "1.0.5" }
         >>> op.update('$', 'version', '1.1.0')
         >>> op.active_json
         # Output: { "app_name": "Test App", "version": "1.1.0" }
 
         Updating item in an array:
 
-        >>> from easy_json.object import JsonObjectParser
-        >>> obj = { "colors": [ "red", "yellow", "green", "purple" ] }
-        >>> op = JsonObjectParser(obj)
+        >>> from robust_json.file import JsonFileParser
+        >>> op = JsonFileParser('array.json')
+        # Object from `array.json` >> { "colors": [ "red", "yellow", "green", "purple" ] }
         >>> op.update_value('colors', 3, "magenta")
         >>> op.active_json
         # Output: { "colors": [ "red", "yellow", "green", "magenta" ] }
 
         Note: if you don't know an item's index, you can use `get_item_index`
-        function from `easy_json.ext` package to get it.
+        function from `robust_json.ext` package to get it.
 
-        >>> from easy_json.object import JsonObjectParser
-        >>> import easy_json.ext as ext
-        >>> obj = { "colors": [ "red", "yellow", "green", "purple" ] }
-        >>> op = JsonObjectParser(obj)
+        >>> from robust_json.file import JSonFileParser
+        >>> import robust_json.ext as ext
+        >>> op = JsonFileParser('array.json')
+        # Object from `array.json` >> { "colors": [ "red", "yellow", "green", "purple" ] }
         >>> colors_array = op.get_key_value('colors')
         # Note: please refer to this function's docs if you have
         # any questions
@@ -292,9 +317,9 @@ class JsonObjectParser:
 
         Updating value with Strict Mode enabled:
 
-        >>> from easy_json.object import JsonObjectParser
-        >>> obj = { "id": 1046, "name": "Jamie Kellen" }
-        >>> op = JsonObjectParser(obj)
+        >>> from robust_json.file import JSonFileParser
+        >>> op = JsonFileParser('file.json')
+        # Object from `file.json` >> { "id": 1046, "name": "Jamie Kellen" }
         >>> op.update_value('$', 'id', 'string', True)
         # JSONStrictModeError exception is raised.
         # When Strict Mode is enabled, new value must be the same
@@ -370,30 +395,30 @@ class JsonObjectParser:
 
         Deleteing a key:value pair from root of simple object:
 
-        >>> from easy_json.object import JsonObjectParser
-        >>> obj = { "application_name": "PetHome", "version": "1.0", "display": "standalone" }
-        >>> op = JsonObjectParser(obj)
+        >>> from robust_json.file import JsonFileParser
+        >>> op = JsonFileParser('del_pair.json')
+        # Object from `del_pair.json` >> { "application_name": "PetHome", "version": "1.0", "display": "standalone" }
         >>> op.delete('$', 'display')
         >>> op.active_json
         # Output: { "application_name": "PetHome", "version": "1.0" }
 
         Deleting item an from array
 
-        >>> from easy_json.object import JsonObjectParser
-        >>> obj = { "colors": [ "red", "magenta", "green" ] }
-        >>> op = JsonObjectParser(obj)
+        >>> from robust_json.file import JsonFileParser
+        >>> op = JsonFileParser('array.json')
+        # Object from `array.json` >> { "colors": [ "red", "magenta", "green" ] }
         >>> op.delete('colors', 2)
         >>> op.active_json
         # Output: { "colors": [ "red", "magenta" ] }
 
         Note: if you don't know the item index, you can
-        use `get_item_index` function from `easy_json.ext`
+        use `get_item_index` function from `robust_json.ext`
         package to get it. See the code below:
 
-        >>> from easy_json.object import JSonObjectParser
-        >>> import easy_json.ext as ext
-        >>> obj = { "colors": [ "red", "magenta", "green" ] } # We'll use the same object
-        >>> op = JsonObjectParser(obj)
+        >>> from robust_json.file import JSonFileParser
+        >>> import robust_json.ext as ext
+        >>> op = JsonFileParser('array.json')
+        # Object from `array.json` >> { "colors": [ "red", "magenta", "green" ] }
         >>> array = op.get_key_value('colors')
         # Note: please refer to this function's docs if you have
         # any questions
@@ -441,6 +466,56 @@ class JsonObjectParser:
                 self.active_json = json_content
                 return json_content
 
+    def minify(self):
+        """
+        Minify all JSON in source file into one line.
+
+        For more information about this method
+        please visit: <LINK_TO_DOCUMENTATION_HERE> 
+        """
+        # TODO Add link to an appropriate README section from GitHub.
+
+        file = open(self.__path, 'r')
+        unfiltered = file.read()
+        cont = JSON.loads(unfiltered)
+        file.close()
+
+        file_w = open(self.__path, 'w')
+        file_w.write(JSON.dumps(cont, indent=None))
+        file_w.close()
+
+    def prettify(self, indent: int = 4):
+        """
+        Add indentations to JSON in source file to make it look better
+        and improve its readability.
+
+        Parameters: `indent : int` specifies the number of spaces added.
+        If not provided, default value will be used (4 spaces/1 tab)
+
+        This function will raise an `IncorrectFunctionParameterTypeError`
+        exception in `indent` parameter has an incorrect type.
+
+        For more information about this method please visit:
+        <LINK_TO_DOCUMENTATION_HERE>
+        """
+        # TODO Add link to an appropriate README section from GitHub.
+
+        if type(indent) != int and indent != None:
+            raise IncorrectFunctionParameterTypeError('indent', 'int', type(indent).__name__)
+
+        if indent == 0 or indent == None:
+            self.minify()
+            return
+
+        file = open(self.__path, 'r')
+        unfiltered = file.read()
+        cont = JSON.loads(unfiltered)
+        file.close()
+
+        file_w = open(self.__path, 'w')
+        file_w.write(JSON.dumps(cont, indent=indent))
+        file.close()
+
     def reset(self, discard_active_object: bool = False) -> dict:
         """
         Discard changes to JSON.
@@ -462,9 +537,9 @@ class JsonObjectParser:
 
         Getting an initial object and storing it in a variable:
 
-        >>> from easy_json.object import JsonObjectParser
-        >>> obj = { "simple_key": "simple_value" }
-        >>> op = JsonObjectParser(obj)
+        >>> from robust_json.file import JsonFileParser
+        >>> op = JsonFileParser('simple_data.json')
+        # Object from `simple_data.json` >> { "simple_key": "simple_value" }
         >>> op.append('$', { "test_arr": [1, 2, 3] })
         # We appended key:value pair to distinguish objects among each other
         >>> initial = op.reset()
@@ -477,9 +552,9 @@ class JsonObjectParser:
 
         Discarding changes to active object:
 
-        >>> from easy_json.object import JsonObjectParser
-        >>> obj = { "simple_key": "simple_value" }
-        >>> op = JsonObjectParser(obj) # We will use the same object
+        >>> from robust_json.file import JsonFileParser
+        >>> op = JsonFileParser('simple_data.json') # We will use the same object
+        # Object from `simple_data.json` >> { "simple_key": "simple_value" }
         >>> op.append('$', { "test_arr": [1, 2, 3] })
         # We appended key:value pair to distinguish objects among each other
         >>> initial = op.reset(discard_active_object=True)
@@ -508,22 +583,35 @@ class JsonObjectParser:
 
         return self.__backup
 
-    def save_to_file(self, path: str, prettify: bool = True, create_file: bool = False):
+    def save_to_file(self, path: str = None, prettify: bool = True, create_file: bool = False):
         """
         Save JSON object to external file.
 
-        Parameters: `path : str` specifies path to an external file.
+        Parameters: `path : str` specifies path to an external file. If not provided, object will be saved into source file.
         `prettify : bool` enables indentations in JSON (improves its readability). `create_file : bool` enables file creation.
         If set to `True`, this function will create a new file and save JSON there, if provided path leads to non-existing file. Note:
         if set to `True` and path is pointing to an existing file, an exception will be raised.
 
         Examples:
 
-        Saving active object to an existing file:
+        Saving active object to the source file:
 
-        >>> from easy_json.object import JsonObjectParser
-        >>> obj = { "user_name": "Akama0978", "date_of_registration": "19-07-2019", "role": "guest" }
-        >>> op = JsonObjectParser(obj) # We will use the same object
+        >>> from robust_json.file import JsonFileParser
+        >>> op = JsonFileParser('data.json')
+        # Object from `data.json` >> { "user_name": "Akama0978", "date_of_registration": "19-07-2019", "role": "guest" }
+        >>> op.update_value('$', 'user_name', 'Amasi0022')
+        # Let's change some values to see the difference
+        >>> op.save_to_file() # Active object had been saved to source file (in this case: `data.json`)
+        >>> op.active_json
+        # Output: { "user_name": "Amasi0022", "date_of_registration": "19-07-2019", "role": "guest" }
+        # Object from 'data.json' >> { "user_name": "Amasi0022", "date_of_registration": "19-07-2019", "role": "guest" }
+        # Calling this function without parameters overwrites JSON in the original file with new JSON
+
+        Saving active object to a different file (existing):
+
+        >>> from robust_json.file import JsonFileParser
+        >>> op = JsonFileParser('data.json') # We will use the same file
+        # Object from `data.json` >> { "user_name": "Akama0978", "date_of_registration": "19-07-2019", "role": "guest" }
         >>> op.update_value('$', 'user_name', 'Amasi0022')
         # Let's change some values to see the difference
         >>> op.save_to_file(path='updated_data.json') 
@@ -535,11 +623,11 @@ class JsonObjectParser:
         # Calling this function with different `path` parameter saves active object to a different file.
         # Note: if specified path is not valid (file not found), an exception will be raised.
 
-        Saving active object to a new file:
+        Saving active object to a new file (non-existing):
 
-        >>> from easy_json.object import JsonObjectParser
-        >>> obj = { "user_name": "Akama0978", "date_of_registration": "19-07-2019", "role": "guest" }
-        >>> op = JsonObjectParser(obj) # We will use the same file
+        >>> from robust_json.file import JsonFileParser
+        >>> op = JsonFileParser('data.json') # We will use the same file
+        # Object from `data.json` >> { "user_name": "Akama0978", "date_of_registration": "19-07-2019", "role": "guest" }
         >>> op.update_value('$', 'user_name', 'Amasi0022')
         # Let's change some values to see the difference
         >>> op.save_to_file(path='new_file.json')
@@ -549,7 +637,7 @@ class JsonObjectParser:
         >>> op.save_to_file(path='new_file.json', create_file=True)
         >>> op.active_json
         # Output: { "user_name": "Amasi0022", "date_of_registration": "19-07-2019", "role": "guest" }
-        # Object from `new_file.json` >> { "user_name": "Amasi0022", "date_of_registration": "19-07-2019", "role": "guest" }
+        # Object from 'new_file.json' >> { "user_name": "Amasi0022", "date_of_registration": "19-07-2019", "role": "guest" }
 
         For more information about this method, please visit:
         <LINK_TO_DOCUMENTATION_HERE>
@@ -557,7 +645,7 @@ class JsonObjectParser:
 
         # TODO Add link to an appropriate README section from GitHub.
 
-        if type(path) != str:
+        if type(path) != str and path != None:
             raise IncorrectFunctionParameterTypeError('path', 'str', type(path).__name__)
 
         if type(prettify) != bool:
@@ -566,11 +654,14 @@ class JsonObjectParser:
         if type(create_file) != bool:
             raise IncorrectFunctionParameterTypeError('create_file', 'bool', type(create_file).__name__)
 
-        if self.__service.check_file_path(path) == False and create_file == False:
-            raise JSONFileError(f'File `{path}` is not suitable for saving JSON.')
         
         
-        file_path = path
+        if path == None:
+            file_path = self.__path
+        else:
+            if not self.__service.check_file_path(path):
+                raise JSONFileError(f'File `{path}` is not suitable for saving JSON.')
+            file_path == path
 
         file_json = self.active_json
 

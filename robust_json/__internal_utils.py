@@ -20,11 +20,11 @@ import os.path
 from pathlib2 import Path
 import json as JSON
 
-from easy_json.errors import JSONFileError, JSONObjectError, JSONPathError, JSONStrictModeError, IncorrectFunctionParameterTypeError
+from robust_json.errors import JSONFileError, JSONObjectError, JSONPathError, JSONStrictModeError, IncorrectFunctionParameterTypeError
 
 class service:
     """
-    Internal 'easy_json' package utils
+    Internal 'robust_json' package utils
     """
     def __init__(self):
         pass
