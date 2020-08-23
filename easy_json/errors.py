@@ -1,4 +1,7 @@
-
+###################################
+# * This file contains all custom exceptions
+# * used by main package
+###################################
 
 class JSONObjectError(Exception):
     """Incorrect JSON object"""
