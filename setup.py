@@ -19,7 +19,15 @@ setuptools.setup(
     author_email='nickolai.beloguzov@gmail.com',
     packages=setuptools.find_packages(),
     install_requires = [
-        'jsonpath_ng'
+        'jsonpath_ng',
+        'pathlib2'
     ],
-    description='Robust and easy-to-use framework for working with JSON' # TODO Add a long description (lond_description property) from README.md 
+    description='Robust and easy-to-use framework for working with JSON', # TODO Add a long description (lond_description property) from README.md
+    license='MIT',
+    classifiers=[
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.8'
+        'Programming Language :: Python :: 3.9'
+    ]
 )

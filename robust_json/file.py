@@ -80,7 +80,7 @@ class JsonFileParser:
         cont = file.read()
         file.close()
 
-        self.active_json = JSON.loads(cont)
+        self.active_json = JSON.loads(cont) #* May deprecate this line due to the fact that in __init__ uts return value is assigned to self.active_json (double assignment)
         return JSON.loads(cont)
 
     def get_key_value(self, json_path: str) -> any:
@@ -184,7 +184,7 @@ class JsonFileParser:
         >>> op.active_json
         # Output: { "users": [ {"id": 1, "name": "Ken"}, { "id": 2, "name": "Liza" }, { "id": 3, "name": "Nick" } ] }
 
-        Adding a key:value pair in each object of an array of objects
+        Adding a key:value pair to each object of array
 
         >>> from robust_json.file import JsonFileParser
         >>> op = JsonFileParser('users.json')
@@ -493,7 +493,7 @@ class JsonFileParser:
         If not provided, default value will be used (4 spaces/1 tab)
 
         This function will raise an `IncorrectFunctionParameterTypeError`
-        exception in `indent` parameter has an incorrect type.
+        exception if `indent` parameter has an incorrect type.
 
         For more information about this method please visit:
         <LINK_TO_DOCUMENTATION_HERE>
@@ -526,7 +526,7 @@ class JsonFileParser:
         Parameters: `discard_active_object : bool` specifies if
         changes will be discarded on active object or not. If
         set to `True`, active object will be reset to an initial
-        state, otherwise it will be lef untouched.
+        state, otherwise it will be left untouched.
 
         This function will return a Python dictionary with initial object.
 
@@ -631,7 +631,7 @@ class JsonFileParser:
         >>> op.update_value('$', 'user_name', 'Amasi0022')
         # Let's change some values to see the difference
         >>> op.save_to_file(path='new_file.json')
-        # FileNotFoundError had been raised
+        # FileNotFoundError exception had been raised
         # To complete this operation, `create_file` parameter
         # needs to be set to `True`
         >>> op.save_to_file(path='new_file.json', create_file=True)
@@ -659,8 +659,6 @@ class JsonFileParser:
         if path == None:
             file_path = self.__path
         else:
-            if not self.__service.check_file_path(path):
-                raise JSONFileError(f'File `{path}` is not suitable for saving JSON.')
             file_path == path
 
         file_json = self.active_json
