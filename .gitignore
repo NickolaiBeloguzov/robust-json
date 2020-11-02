@@ -5,6 +5,7 @@
 # EGG files
 /*.egg-ingo
 /*.egg
+/*.egg-info/**
 
 # Python Compiled files
 .pyc
@@ -17,3 +18,6 @@
 
 #Test files
 /test.py
+
+# Temp config file
+/*.config.md
