@@ -4,7 +4,7 @@ The robust-json package is a lightweight, but capable library for working with J
 
 ## Installation
 <!--- TODO Add link to PyPI --->
-You can install this package directly from [PyPI]("//"):
+You can install this package directly from [PyPI](https://pypi.org/project/robust-json/):
 
     pip install robust-json 
 This library is supported on python 3.x only.
@@ -13,11 +13,11 @@ This library is supported on python 3.x only.
 
 This library includes 4 modules:
 
-* **file**: This module provides functionality for working with files containing JSON.
-* **object**: This module provides functionality for working with JSON objects (Python dictionaries)
+* [**file**](#file-mod): This module provides functionality for working with files containing JSON.
+* [**object**](#obj-mod): This module provides functionality for working with JSON objects (Python dictionaries)
 _Note: the difference between file and object modules is that during initialization 'file' module expects path to file with JSON while 'object' module expects a Python dictionary. For more information please read corresponding sections._
-* **errors**: This module contains all the exceptions that may be raised during package runtime.
-* **ext**: This module provides some extra function that can be helpful while working with JSON.
+* [**errors**](#err-mod): This module contains all the exceptions that may be raised during package runtime.
+* [**ext**](#ext-mod): This module provides some extra function that can be helpful while working with JSON.
 
 ## File module overview
 <div id='file-mod'><div>
@@ -825,12 +825,13 @@ During initialization a *IncorrectFunctionParameterTypeError* exception may be r
     # But if file already exists, a 'FileExistsError' will be raised.
     ```
 ## Errors module overview
+<div id='err-mod'></div>
 
 This module contains all custom exceptions that can be raised during package runtime. There are a total of 5: *JSONFileError*, *JSONPathError*, *JSONStrictModeError*, *JSONObjectError*, *IncorrectFunctionParameterTypeError*. If you need to import them, it can be done like this:
 ```
 import robust_json.errors as json_err
 ```
-#### Exceptions
+### **Exceptions**
 * **JSONFileError**
     This exception indicates that there is an error with JSON file (it has an unsupported extension, cannot be processed, etc.)
 * **JSONPathError**
@@ -843,10 +844,10 @@ import robust_json.errors as json_err
     This exception indicates that one or more of function's parameters has incorrect type.
 
 ## Extension module overview
-<div id='ext-module'></div>
+<div id='ext-mod'></div>
 This module provides some useful methods that can reduce development time.
 
-#### Methods
+### **Methods**
 * **filter_json_array(json_array: list, field: string, value: any)**
     This function will filter given array of JSON objects and return it. 
     *json_array:list* parameter specifies the list that neesd to be filtered, *field:str* specifies the key and *value:any* specifies the value. Two last parameters form a key:value pair which takes a role of a filter.

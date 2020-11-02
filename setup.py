@@ -12,9 +12,12 @@
 
 import setuptools
 
+with open('README.md', 'r') as f:
+    lond_desc = f.read()
+
 setuptools.setup(
     name='robust-json', # or robust_json
-    version='1.0',
+    version='1.1.4',
     author='Nickolai Beloguzov',
     author_email='nickolai.beloguzov@gmail.com',
     packages=setuptools.find_packages(),
@@ -22,12 +25,18 @@ setuptools.setup(
         'jsonpath_ng',
         'pathlib2'
     ],
-    description='Robust and easy-to-use framework for working with JSON', # TODO Add a long description (lond_description property) from README.md
+    long_description=lond_desc,
+    long_description_content_type='text/markdown',
+    url='https://github.com/NickolaiBeloguzov/robust-json',
+    description='Robust and easy-to-use framework for working with JSON',
     license='MIT',
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8'
-        'Programming Language :: Python :: 3.9'
-    ]
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Operating System :: OS Independent'
+    ],
+    python_requires='>=3.8',
+    include_package_data=True
 )
