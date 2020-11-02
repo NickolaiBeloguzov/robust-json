@@ -23,6 +23,7 @@ import jsonpath_ng.ext as jsonpath
 # Misc import
 from typing import Union
 import os.path
+import copy
 from pathlib2 import Path
 
 # Other modules import
@@ -40,24 +41,16 @@ class JsonObjectParser:
             raise IncorrectFunctionParameterTypeError('json', 'dict', type(json).__name__)
 
         self.__backup = json
-        self.active_json = json
+        self.active_json = copy.deepcopy(json)
         self.__service = service()
-    
 
     @property
     def backup(self):
         """
-        Initial JSON object (without any recent changes).
+        Returns initial object (without any recent changes)
         """
         return self.__backup
-
-    @property
-    def service(self):
-        """
-        `JsonObjectParser` class internal utils provider
-        """
-
-        return self.__service
+    
 
     def get_key_value(self, json_path: str) -> any:
         """
@@ -221,7 +214,7 @@ class JsonObjectParser:
                             if type(append_value) == dict:
                                 i.update(append_value)
                             else:
-                                raise TypeError(f'To append to a JSON array, parameter `append_value` must be a dictionary; got `{type(append_value).__name__}` instead.')
+                                raise TypeError(f'To append to a JSON object, parameter `append_value` must be a dictionary; got `{type(append_value).__name__}` instead.')
                     self.active_json = json_content
                     return json_content
             temp.update(append_value)
@@ -565,9 +558,6 @@ class JsonObjectParser:
 
         if type(create_file) != bool:
             raise IncorrectFunctionParameterTypeError('create_file', 'bool', type(create_file).__name__)
-
-        if self.__service.check_file_path(path) == False and create_file == False:
-            raise JSONFileError(f'File `{path}` is not suitable for saving JSON.')
         
         
         file_path = path
