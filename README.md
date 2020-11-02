@@ -90,9 +90,9 @@ During initialization a *JSONFileError* exception may be raised. This means that
 
   * **JsonFileParser.append(json_path: str, append_value: any, append_at_end: bool = False)**
     This method appends value to existing JSON object and returns a Python dictionary with updated contents.
-    *json_path:str* parameter specifies a path where new value will be added. To append value to the root of JSON object, *json_path* needs to be equal to '$'. *append_value:any* parameter specifies a value that will be appended. *append_at_end:bool* controls the behaviour of this function regarding JSON arrays of objects (structures like this: [{}, {}, {}, ...]) and general arrays (structures like this: [a, b, c, ...]). It has no influence on other structures. If set to False, function will try to add given value in each object of an array. If set to True, function will try to append given value at the end of an array. (see examples below). This function will return a Python dictionary with updated JSON.
+    *json_path:str* parameter specifies a path where new value will be added. To append value to the root of JSON object, *json_path* needs to be equal to '$'. *append_value:any* parameter specifies a value that will be appended. *append_at_end:bool* controls the behaviour of this function regarding JSON arrays of objects (structures like this: [{}, {}, {}, ...]) and general arrays (structures like this: [a, b, c, ...]). It has no influence on other structures. If set to False, function will try to add given value to each object of an array. If set to True, function will try to append given value at the end of an array. (see examples below). This function will return a Python dictionary with updated JSON.
 
-    This function will raise a *IncorrectFunctionParameterTypeEroor* exception if its parameter(-s) has(-ve) an incorrect type. This function will also raise a *ValueError* exception if 'append_value' is empty (empty string, empty array, empty dictionary). This function will raise a *JSONPathError* if provided path is not valid (does not exist or could not be accessed).
+    This function will raise a *IncorrectFunctionParameterTypeEroor* exception if its parameter(-s) has(-ve) an incorrect type. This function will also raise a *ValueError* exception if 'append_value' is empty (is equal to empty string, empty array, empty dictionary, etc.). This function will raise a *JSONPathError* if provided path is not valid (does not exist or could not be accessed). This function will raise any additional exceptions if occurred.
 
     Examples:
 
@@ -122,7 +122,7 @@ During initialization a *JSONFileError* exception may be raised. This means that
     # This is not good!
     # This happened because 'append_at_end' parameter is set to False.
 
-    # Function appended new object to each of the objects in the array and new values overwrote the old 
+    # Function appended new object to each of the objects in the array and new values have overwritten the old 
     # ones.
 
     # Note: we can discard these unwanted/malicious changes using JsonFileParser.reset() function with 
@@ -162,10 +162,10 @@ During initialization a *JSONFileError* exception may be raised. This means that
     print(op.active_json)
     # Output: {'colors': ['cyan', 'magenta']}
 
-    # Nothing happened
-    # That's because 'append_at_end' parameter is set to False
-    # Function tried to append new string to each string and failed
-    # To fix this, we need to set 'append_at_end' parameter to True
+    # Nothing happened.
+    # That's because 'append_at_end' parameter is set to False.
+    # Function tried to append new string to each string and failed.
+    # To fix this, we need to set 'append_at_end' parameter to True.
 
     op.append('colors', 'yellow', True)
     print(op.active_json)
@@ -174,7 +174,7 @@ During initialization a *JSONFileError* exception may be raised. This means that
   * **JsonFileParser.update_value(json_path: str, key_or_index: Union[str, int], new_value: any, strict_mode: bool = False)**
     <div id='file-upd'></div>
 
-    This function will updaate value in key:value pair and return a Python dictionary with updated contents. 
+    This function will update value in key:value pair and return a Python dictionary with updated contents. 
     *json_path:str* parameter specifies a path to key:value pair/array/etc. parent that needs to be updated. (To update value in the root of JSON object, *json_path* needs to be equal to '$') while *key_or_index:Union[str, int]* parameter specifies key (if it's an object) or array index (if it's an array). This implies that if we need to update key with path 'field0.field1.upd_key', then *json_path* will be equal to 'field0.field1' and *key_or_index* parameter will be equal to 'upd_key'. *Note: if you use an array index while 'json_path' parameter is pointing to JSON object, or if you use a property name while 'json_path' is pointing to JSON array, an exception will be raised* (See examples below). *new_value:any* specifies value that will overwrite the old one and *strict_mode:bool* enables Strict Mode. By default this mode is turned off. If turned on, this method will ensure that new value has the same type as the old one (if old value is a string, then the new one also needs to be a string, etc.). If types are not matching, an exception will be raised.
 
     This function will raise an *IncorrectFunctionParameterTypeError* exception is its parameter(-s) has(-ve) an incorrect type. This function will also raise a *JSONStrictModeError* in case of mismatched types if Strict Mode is enabled and a *JSONPathError* exception if JSON path is not valid (doesn't exist or could not be accessed). This function will raise any additional exceptions if occured.
@@ -205,8 +205,9 @@ During initialization a *JSONFileError* exception may be raised. This means that
     # Output: {'app_name': 'HomeCare', 'authors': ['Alec Hammer', 'Nick Rogerson']}
     ```
     ```
-    # Note: if you don't know the index of an item, you can use 'get_item_index()' 
-    # function from 'robust_json.ext' module to get it. (See corresponding section in the docs)
+    # Note: if you don't know the index of an item, you can use 
+    # 'get_item_index()' function from 'robust_json.ext' module to get it. 
+    # (See corresponding section in the docs)
 
     from robust_json.file import JsonFileParser
     import robust_json.ext as ext
@@ -237,9 +238,9 @@ During initialization a *JSONFileError* exception may be raised. This means that
     # Contents of 'test6.json' file: {'app_name': 'HomeCare', 'app_id': 1077}
 
     op.update_value('$', 'app_id', 'this is a string', True)
-    # An 'StrictModeError' was raised
-    # This happened because new value has a different type
-    # Let's try again, but with integer
+    # A 'StrictModeError' exception was raised.
+    # This happened because new value has a different type.
+    # Let's try again, but with integer.
 
     op.update_value('$', 'app_id', 1080, True)
     print(op.active_json)
@@ -328,7 +329,7 @@ During initialization a *JSONFileError* exception may be raised. This means that
     # Contents of `test10.json` file: { "simple_key": "simple_value" }
 
     op.append('$', { "test_arr": [1, 2, 3] })
-    # We appended key:value pair to distinguish objects among each other
+    # We appended key:value pair to distinguish objects among each other.
 
     initial = op.reset()
     print(initial)
@@ -337,7 +338,7 @@ During initialization a *JSONFileError* exception may be raised. This means that
     print(op.active_json)
     # Output: { "simple_key": "simple_value", "test_arr": [1, 2, 3] }
     # Calling this method without parameters simply makes it return initial
-    # object, saving the active one for future use
+    # object, saving the active one for future use.
     ```
 
     Getting an initial object and resetting an active one:
@@ -349,7 +350,7 @@ During initialization a *JSONFileError* exception may be raised. This means that
     # Contents of `test10.json` file: { "simple_key": "simple_value" }
 
     op.append('$', { "test_arr": [1, 2, 3] })
-    # We appended key:value pair to distinguish objects among each other
+    # We appended key:value pair to distinguish objects among each other.
 
     initial = op.reset(True)
     print(initial)
@@ -358,7 +359,7 @@ During initialization a *JSONFileError* exception may be raised. This means that
     print(op.active_json)
     # Output: { "simple_key": "simple_value" }
 
-    # Calling this method with 'discard_active_object' set to True
+    # Calling this method with 'discard_active_object' set to True.
     # makes it completely revert all changes to active object, making it
     # equal to the initial one.
 
@@ -393,7 +394,7 @@ During initialization a *JSONFileError* exception may be raised. This means that
 
     # Calling 'save_to_file' method without any arguments makes it 
     # overwrite an object in source file ('data.json' in this case) 
-    # with the value of JsonFileParser.active_json property
+    # with the value of JsonFileParser.active_json property.
     ```
     Saving active object to a different file (existing):
     ```
