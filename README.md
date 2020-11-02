@@ -86,7 +86,7 @@ During initialization a *JSONFileError* exception may be raised. This means that
     print(val)
     # Output: 2
     ```
-    This function will raise an *IncorrectFunctionParameterTypeError* is its parameter has an incorrect type. This function will also raise a *JSONPathError* if specified JSON path is not valid (does not exist or could not be accessed).
+    This function will raise an *IncorrectFunctionParameterTypeError* if its parameter has an incorrect type. This function will also raise a *JSONPathError* if specified JSON path is not valid (does not exist or could not be accessed).
 
   * **JsonFileParser.append(json_path: str, append_value: any, append_at_end: bool = False)**
     This method appends value to existing JSON object and returns a Python dictionary with updated contents.
