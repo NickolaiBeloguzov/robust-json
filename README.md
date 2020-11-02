@@ -13,9 +13,9 @@ This library is supported on python 3.x only.
 
 This library includes 4 modules:
 
-* [**file**](#file-mod): This module provides functionality for working with files containing JSON.
+* [**file**](#file-mod): This module provides functionality for working with  JSON files.
 * [**object**](#obj-mod): This module provides functionality for working with JSON objects (Python dictionaries)
-_Note: the difference between file and object modules is that during initialization 'file' module expects path to file with JSON while 'object' module expects a Python dictionary. For more information please read corresponding sections._
+_Note: the difference between file and object modules is that during initialization 'file' module expects path to JSON file while 'object' module expects a Python dictionary. For more information please read corresponding sections._
 * [**errors**](#err-mod): This module contains all the exceptions that may be raised during package runtime.
 * [**ext**](#ext-mod): This module provides some extra function that can be helpful while working with JSON.
 
@@ -34,7 +34,7 @@ During initialization a *JSONFileError* exception may be raised. This means that
 
 * **Properties**:
   * **JsonFileParser.file_formats**
-    This property lists all file extensions supported by this module if form of an array. At the moment only _.json_ and _.txt_ files are supported. This is used during class initialization to determine if file can pe processed.
+    This property lists all file extensions supported by this module in form of an array. At the moment only _.json_ and _.txt_ files are supported. This is used during class initialization to determine if file can pe processed.
   * **JsonFileParser.path**
     This property returns source file path
   * **JsonFileParser.active_json**
