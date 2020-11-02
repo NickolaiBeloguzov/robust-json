@@ -10,9 +10,9 @@
 # Python Compiled files
 .pyc
 
-# Distribution package folder
+# Distribution and build package folder
 /dist/
-
+/build/
 #Package build files
 /data_tests
 
@@ -21,3 +21,5 @@
 
 # Temp config file
 /*.config.md
+
+
