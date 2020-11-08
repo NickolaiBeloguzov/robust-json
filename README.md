@@ -16,8 +16,8 @@ This library includes 4 modules:
 * [**file**](#file-mod): This module provides functionality for working with  JSON files.
 * [**object**](#obj-mod): This module provides functionality for working with JSON objects (Python dictionaries)
 _Note: the difference between file and object modules is that during initialization 'file' module expects path to JSON file while 'object' module expects a Python dictionary. For more information please read corresponding sections._
-* [**errors**](#err-mod): This module contains all the exceptions that may be raised during package runtime.
-* [**ext**](#ext-mod): This module provides some extra function that can be helpful while working with JSON.
+* [**errors**](#err-mod): This module contains all exceptions that may be raised during package runtime.
+* [**ext**](#ext-mod): This module provides some extra functions that can be helpful while working with JSON.
 
 ## File module overview
 <div id='file-mod'><div>
