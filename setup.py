@@ -17,7 +17,7 @@ with open('README.md', 'r') as f:
 
 setuptools.setup(
     name='robust-json', # or robust_json
-    version='1.1.4',
+    version='1.1.5',
     author='Nickolai Beloguzov',
     author_email='nickolai.beloguzov@gmail.com',
     packages=setuptools.find_packages(),
@@ -29,9 +29,9 @@ setuptools.setup(
     long_description_content_type='text/markdown',
     url='https://github.com/NickolaiBeloguzov/robust-json',
     description='Robust and easy-to-use framework for working with JSON',
-    license='MIT',
+    license='Apache 2.0',
     classifiers=[
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
