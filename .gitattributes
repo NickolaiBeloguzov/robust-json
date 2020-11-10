@@ -2,3 +2,4 @@
 .gitattributes export-ignore
 .gitignore export-ignore
 /data_tests export-ignore
+/.github export-ignore
