@@ -12,31 +12,28 @@
 
 import setuptools
 
-with open('README.md', 'r') as f:
+with open("README.md", "r") as f:
     lond_desc = f.read()
 
 setuptools.setup(
-    name='robust-json', # or robust_json
-    version='1.1.5',
-    author='Nickolai Beloguzov',
-    author_email='nickolai.beloguzov@gmail.com',
+    name="robust-json",  # or robust_json
+    version="1.1.6",
+    author="Nickolai Beloguzov",
+    author_email="nickolai.beloguzov@gmail.com",
     packages=setuptools.find_packages(),
-    install_requires = [
-        'jsonpath_ng',
-        'pathlib2'
-    ],
+    install_requires=["jsonpath_ng", "pathlib2"],
     long_description=lond_desc,
-    long_description_content_type='text/markdown',
-    url='https://github.com/NickolaiBeloguzov/robust-json',
-    description='Robust and easy-to-use framework for working with JSON',
-    license='Apache 2.0',
+    long_description_content_type="text/markdown",
+    url="https://github.com/NickolaiBeloguzov/robust-json",
+    description="Robust and easy-to-use framework for working with JSON",
+    license="Apache 2.0",
     classifiers=[
-        'License :: OSI Approved :: Apache Software License',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Operating System :: OS Independent'
+        "License :: OSI Approved :: Apache Software License",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Operating System :: OS Independent",
     ],
-    python_requires='>=3.8',
-    include_package_data=True
+    python_requires=">=3.8",
+    include_package_data=True,
 )

@@ -22,35 +22,37 @@ import jsonpath_ng.ext as jsonpath
 
 # Misc import
 from typing import Union
-import os.path
 import copy
-from pathlib2 import Path
 
 # Other modules import
-from robust_json.errors import JSONFileError, JSONPathError, JSONObjectError, JSONStrictModeError, IncorrectFunctionParameterTypeError
+from robust_json.errors import (
+    JSONPathError,
+    JSONStrictModeError,
+    IncorrectFunctionParameterTypeError,
+)
 from robust_json.__internal_utils import service
 
 #! Review documentation!!!
 
 
 class JsonObjectParser:
-    
     def __init__(self, json: dict):
 
         if type(json) != dict:
-            raise IncorrectFunctionParameterTypeError('json', 'dict', type(json).__name__)
+            raise IncorrectFunctionParameterTypeError(
+                "json", "dict", type(json).__name__
+            )
 
         self.__backup = json
         self.active_json = copy.deepcopy(json)
         self.__service = service()
 
     @property
-    def backup(self):
+    def backup(self) -> dict:
         """
         Returns initial object (without any recent changes)
         """
         return self.__backup
-    
 
     def get_key_value(self, json_path: str) -> any:
         """
@@ -90,23 +92,26 @@ class JsonObjectParser:
         # TODO Add link to an appropriate README section from GitHub.
 
         if type(json_path) != str:
-            raise IncorrectFunctionParameterTypeError('json_path', 'str', type(json_path).__name__)
+            raise IncorrectFunctionParameterTypeError(
+                "json_path", "str", type(json_path).__name__
+            )
 
         json_content = self.active_json
 
         if not self.__service.check_json_path(json_path, json_content):
-            raise JSONPathError(f'Path `{json_path}` is not valid.')
+            raise JSONPathError(f"Path `{json_path}` is not valid.")
 
         js_expr = jsonpath.parse(json_path)
 
         res = [item.value for item in js_expr.find(json_content)]
-        
+
         if len(res) == 1:
             return res[0]
         return res
 
-
-    def append(self, json_path: str, append_value: any, append_at_end: bool = False):
+    def append(
+        self, json_path: str, append_value: any, append_at_end: bool = False
+    ) -> dict:
         """
         Append new value to an existing JSON object.
 
@@ -119,10 +124,10 @@ class JsonObjectParser:
         specifies if given value will be appended to the end of a JSON array or it
         will be added into each object of this array. While this parameter has no effect
         if value is being appended to a JSON object (dictionary), it is neccessary if
-        value is being appended to a JSON array (list). If value is being appended to an array of elements, 
-        other than arrays or objects (integers, strings, etc.), setting this parameter to `False` will not 
-        result in any changes made to array. It needs to be set to `True` for this operation to complete. 
-        
+        value is being appended to a JSON array (list). If value is being appended to an array of elements,
+        other than arrays or objects (integers, strings, etc.), setting this parameter to `False` will not
+        result in any changes made to array. It needs to be set to `True` for this operation to complete.
+
 
         This function will return a Python dictionary with updated content.
 
@@ -174,28 +179,31 @@ class JsonObjectParser:
         # To fix this, you need to set `append_at_end` parameter to `True`
         >>> op.append('colors', 'green', True)
         >>> op.active_json
-        # Output: { "colors": [ "red", "blue", "green" ] } 
+        # Output: { "colors": [ "red", "blue", "green" ] }
 
 
         For more information about this method, please visit: <LINK_TO_DOCUMENTATION_HERE>
         """
         # TODO Add link to an appropriate README section from GitHub.
         if type(json_path) != str:
-            raise IncorrectFunctionParameterTypeError('json_path', 'str', type(json_path).__name__)
-        
-        if type(append_at_end) != bool:
-            raise IncorrectFunctionParameterTypeError('append_at_end', 'bool', type(append_at_end).__name__)
+            raise IncorrectFunctionParameterTypeError(
+                "json_path", "str", type(json_path).__name__
+            )
 
-        empty_obj = [[], {}, '']
+        if type(append_at_end) != bool:
+            raise IncorrectFunctionParameterTypeError(
+                "append_at_end", "bool", type(append_at_end).__name__
+            )
+
+        empty_obj = [[], {}, ""]
 
         if append_value in empty_obj:
-            raise ValueError(f'Parameter `append_value` is empty.')
-
+            raise ValueError(f"Parameter `append_value` is empty.")
 
         json_content = self.active_json
 
         if not self.__service.check_json_path(json_path, json_content):
-            raise JSONPathError(f'Path `{json_path}` is not valid.')
+            raise JSONPathError(f"Path `{json_path}` is not valid.")
 
         js_expr = jsonpath.parse(json_path)
 
@@ -203,7 +211,7 @@ class JsonObjectParser:
             temp = item.value
 
             if type(temp) == list:
-                
+
                 if append_at_end == True:
                     temp.append(append_value)
                     self.active_json = json_content
@@ -214,18 +222,26 @@ class JsonObjectParser:
                             if type(append_value) == dict:
                                 i.update(append_value)
                             else:
-                                raise TypeError(f'To append to a JSON object, parameter `append_value` must be a dictionary; got `{type(append_value).__name__}` instead.')
+                                raise TypeError(
+                                    f"To append to a JSON object, parameter `append_value` must be a dictionary; got `{type(append_value).__name__}` instead."
+                                )
                     self.active_json = json_content
                     return json_content
             temp.update(append_value)
             self.active_json = json_content
             return json_content
-    
-    def update_value(self, json_path: str, key_or_index: Union[str, int], new_value: any, strict_mode: bool = False) -> dict:
+
+    def update_value(
+        self,
+        json_path: str,
+        key_or_index: Union[str, int],
+        new_value: any,
+        strict_mode: bool = False,
+    ) -> dict:
         """
         Update value in JSON.
 
-        Parameters: `json_path : str` specifies property path, while `key_or_index : Union[str, int]` 
+        Parameters: `json_path : str` specifies property path, while `key_or_index : Union[str, int]`
         specifies property name in JSON object or item index in JSON array. For example, if you
         need to update value with key `update_key` located under `field1.field2.field3.update_key`,
         then parameter `key_or_index` will be equal to 'update_key' and `json_path` parameter will
@@ -239,7 +255,7 @@ class JsonObjectParser:
 
         This function will return a Python dictionary with updated content.
 
-        This function will raise a `IncorrectFunctionParameterTypeError` exception if at least one of the 
+        This function will raise a `IncorrectFunctionParameterTypeError` exception if at least one of the
         parameters has an incorrect type.
         This function will raise a `JSONStrictModeError` if types of old and new values are not the same.
         This function will raise any additional exceptions if occurred.
@@ -299,21 +315,27 @@ class JsonObjectParser:
         For more information about this method, please visit:
         <LINK_TO_DOCUMENTATION_HERE>
         """
-        #TODO Add link to an appropriate README section from GitHub 
+        # TODO Add link to an appropriate README section from GitHub
 
         if type(json_path) != str:
-            raise IncorrectFunctionParameterTypeError('json_path', 'str', type(json_path).__name__)
+            raise IncorrectFunctionParameterTypeError(
+                "json_path", "str", type(json_path).__name__
+            )
 
         if type(strict_mode) != bool:
-            raise IncorrectFunctionParameterTypeError('strict_mode', 'bool', type(strict_mode).__name__)
+            raise IncorrectFunctionParameterTypeError(
+                "strict_mode", "bool", type(strict_mode).__name__
+            )
 
         if type(key_or_index) not in [str, int]:
-            raise IncorrectFunctionParameterTypeError('key_or_index', 'str or int', type(key_or_index).__name__)
+            raise IncorrectFunctionParameterTypeError(
+                "key_or_index", "str or int", type(key_or_index).__name__
+            )
 
         json_content = self.active_json
 
         if not self.__service.check_json_path(json_path, json_content):
-            raise JSONPathError(f'Path `{json_path}` is not valid.')
+            raise JSONPathError(f"Path `{json_path}` is not valid.")
 
         js_expr = jsonpath.parse(json_path)
 
@@ -321,19 +343,27 @@ class JsonObjectParser:
             temp = item.value
             if type(temp) == list:
                 if type(key_or_index) != int:
-                    raise TypeError(f'Path `{json_path}` is pointing to a JSON array, therefore `key_or_index` parameter must have an `int` type; got `{type(key_or_index).__name__}` instead.')
+                    raise TypeError(
+                        f"Path `{json_path}` is pointing to a JSON array, therefore `key_or_index` parameter must have an `int` type; got `{type(key_or_index).__name__}` instead."
+                    )
                 if strict_mode == True:
                     if type(temp[key_or_index]) != type(new_value):
-                        raise JSONStrictModeError(f'If strict mode is enabled, the type of the new value must be identical to the type of the old one ({type(temp[key_or_index]).__name__}); got `{type(new_value).__name__}` instead.')
+                        raise JSONStrictModeError(
+                            f"If strict mode is enabled, the type of the new value must be identical to the type of the old one ({type(temp[key_or_index]).__name__}); got `{type(new_value).__name__}` instead."
+                        )
                 temp[key_or_index] = new_value
                 self.active_json = json_content
                 return json_content
             else:
                 if type(key_or_index) != str:
-                    raise TypeError(f'Path `{json_path}` is pointing to a JSON object, therefore `key_or_index` parameter must have a `str` type; got `{type(key_or_index).__name__}` instead.')
+                    raise TypeError(
+                        f"Path `{json_path}` is pointing to a JSON object, therefore `key_or_index` parameter must have a `str` type; got `{type(key_or_index).__name__}` instead."
+                    )
                 if strict_mode == True:
                     if type(temp[key_or_index]) != type(new_value):
-                        raise JSONStrictModeError(f'If strict mode is enabled, the type of the new value must be identical to the type of the old one ({type(temp[key_or_index]).__name__}); got `{type(new_value).__name__}` instead.')
+                        raise JSONStrictModeError(
+                            f"If strict mode is enabled, the type of the new value must be identical to the type of the old one ({type(temp[key_or_index]).__name__}); got `{type(new_value).__name__}` instead."
+                        )
                 temp.update({key_or_index: new_value})
                 self.active_json = json_content
                 return json_content
@@ -342,7 +372,7 @@ class JsonObjectParser:
         """
         Delete value from JSON.
 
-        Parameters: `json_path : str` specifies property path, while `key_or_index : Union[str, int]` 
+        Parameters: `json_path : str` specifies property path, while `key_or_index : Union[str, int]`
         specifies property name in JSON object or item index in JSON array. For example, if you
         need to delete value with key `delete_key` located under `field1.field2.field3.delete_key`,
         then parameter `key_or_index` will be equal to 'delete_key' and `json_path` parameter will
@@ -358,7 +388,7 @@ class JsonObjectParser:
         given parameters has an incorrect type.
         This function will raise a `JSONPathError` is given path is not valid.
         This function will raise any additional exceptions if occurred.
-        
+
         Examples:
 
         Deleteing a key:value pair from root of simple object:
@@ -404,18 +434,22 @@ class JsonObjectParser:
 
         """
 
-        #TODO Add link to an appropriate README section from GitHub
+        # TODO Add link to an appropriate README section from GitHub
 
         if type(json_path) != str:
-            raise IncorrectFunctionParameterTypeError('json_path', 'str', type(json_path).__name__)
+            raise IncorrectFunctionParameterTypeError(
+                "json_path", "str", type(json_path).__name__
+            )
 
         if type(key_or_index) not in [str, int]:
-            raise IncorrectFunctionParameterTypeError('key_or_index', 'str or int', type(key_or_index).__name__)
-        
+            raise IncorrectFunctionParameterTypeError(
+                "key_or_index", "str or int", type(key_or_index).__name__
+            )
+
         json_content = self.active_json
-        
+
         if not self.__service.check_json_path(json_path, json_content):
-            raise JSONPathError(f'Path `{json_path}` is not valid.')
+            raise JSONPathError(f"Path `{json_path}` is not valid.")
 
         js_expr = jsonpath.parse(json_path)
 
@@ -423,13 +457,17 @@ class JsonObjectParser:
             temp = item.value
             if type(temp) == list:
                 if type(key_or_index) != int:
-                    raise TypeError(f'Path `{json_path}` is pointing to a JSON array, therefore `key_or_index` parameter must have an `int` type; got `{type(key_or_index).__name__}` instead.')
+                    raise TypeError(
+                        f"Path `{json_path}` is pointing to a JSON array, therefore `key_or_index` parameter must have an `int` type; got `{type(key_or_index).__name__}` instead."
+                    )
                 del temp[key_or_index]
                 self.active_json = json_content
                 return json_content
             else:
                 if type(key_or_index) != str:
-                    raise TypeError(f'Path `{json_path}` is pointing to a JSON object, therefore `key_or_index` parameter must have a `str` type; got `{type(key_or_index).__name__}` instead.')
+                    raise TypeError(
+                        f"Path `{json_path}` is pointing to a JSON object, therefore `key_or_index` parameter must have a `str` type; got `{type(key_or_index).__name__}` instead."
+                    )
                 del temp[key_or_index]
                 self.active_json = json_content
                 return json_content
@@ -492,16 +530,20 @@ class JsonObjectParser:
         """
 
         # TODO Add link to an appropriate README section from GitHub.
-        
+
         if type(discard_active_object) != bool:
-            raise IncorrectFunctionParameterTypeError('discard_active_object', 'bool', type(discard_active_object).__name__)
-        
+            raise IncorrectFunctionParameterTypeError(
+                "discard_active_object", "bool", type(discard_active_object).__name__
+            )
+
         if discard_active_object == True:
             self.active_json = self.__backup
 
         return self.__backup
 
-    def save_to_file(self, path: str, prettify: bool = True, create_file: bool = False):
+    def save_to_file(
+        self, path: str, prettify: bool = True, create_file: bool = False
+    ) -> None:
         """
         Save JSON object to external file.
 
@@ -519,8 +561,8 @@ class JsonObjectParser:
         >>> op = JsonObjectParser(obj) # We will use the same object
         >>> op.update_value('$', 'user_name', 'Amasi0022')
         # Let's change some values to see the difference
-        >>> op.save_to_file(path='updated_data.json') 
-        # Active object had been saved to a different file 
+        >>> op.save_to_file(path='updated_data.json')
+        # Active object had been saved to a different file
         # (in this case: `updated_data.json`)
         >>> op.active_json
         # Output: { "user_name": "Amasi0022", "date_of_registration": "19-07-2019", "role": "guest" }
@@ -551,15 +593,20 @@ class JsonObjectParser:
         # TODO Add link to an appropriate README section from GitHub.
 
         if type(path) != str:
-            raise IncorrectFunctionParameterTypeError('path', 'str', type(path).__name__)
+            raise IncorrectFunctionParameterTypeError(
+                "path", "str", type(path).__name__
+            )
 
         if type(prettify) != bool:
-            raise IncorrectFunctionParameterTypeError('prettify', 'bool', type(prettify).__name__)
+            raise IncorrectFunctionParameterTypeError(
+                "prettify", "bool", type(prettify).__name__
+            )
 
         if type(create_file) != bool:
-            raise IncorrectFunctionParameterTypeError('create_file', 'bool', type(create_file).__name__)
-        
-        
+            raise IncorrectFunctionParameterTypeError(
+                "create_file", "bool", type(create_file).__name__
+            )
+
         file_path = path
 
         file_json = self.active_json
@@ -571,13 +618,17 @@ class JsonObjectParser:
 
         if create_file == True:
             if self.__service.check_file_path(file_path):
-                raise FileExistsError(f'File `{file_path}` already exists. Either set `create_file` parameter to `False` or change `path` parameter to silence this error.')
-            file = open(file_path, 'x')
+                raise FileExistsError(
+                    f"File `{file_path}` already exists. Either set `create_file` parameter to `False` or change `path` parameter to silence this error."
+                )
+            file = open(file_path, "x")
             file.write(JSON.dumps(file_json, indent=indent))
             file.close()
         else:
             if not self.__service.check_file_path(file_path):
-                raise FileNotFoundError(f'File `{file_path}` doesn\'t exist. If you want to create a new file under this path, please set `create_file` parameter to `True`.')
-            file = open(file_path, 'w')
+                raise FileNotFoundError(
+                    f"File `{file_path}` doesn't exist. If you want to create a new file under this path, please set `create_file` parameter to `True`."
+                )
+            file = open(file_path, "w")
             file.write(JSON.dumps(file_json, indent=indent))
             file.close()

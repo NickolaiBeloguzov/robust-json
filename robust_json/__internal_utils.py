@@ -20,12 +20,18 @@ import os.path
 from pathlib2 import Path
 import json as JSON
 
-from robust_json.errors import JSONFileError, JSONObjectError, JSONPathError, JSONStrictModeError, IncorrectFunctionParameterTypeError
+from robust_json.errors import (
+    JSONFileError,
+    JSONPathError,
+    IncorrectFunctionParameterTypeError,
+)
+
 
 class service:
     """
     Internal 'robust_json' package utils
     """
+
     def __init__(self):
         pass
 
@@ -50,34 +56,41 @@ class service:
         """
         # Checking parameter type
         if type(path) != str:
-            raise IncorrectFunctionParameterTypeError('path', 'str', type(path).__name__)
-        
+            raise IncorrectFunctionParameterTypeError(
+                "path", "str", type(path).__name__
+            )
+
         if type(file_formats) != list:
-            raise IncorrectFunctionParameterTypeError('file_formats', 'str', type(file_formats).__name__)
+            raise IncorrectFunctionParameterTypeError(
+                "file_formats", "str", type(file_formats).__name__
+            )
 
         # Checking extensions array items type
         for i in enumerate(file_formats):
             if type(i[1]) != str:
-                raise TypeError(f'Array `file_formats` must contain only strings; got {type(i[1]).__name__} instead (Array index: [{i[0]}]).')
+                raise TypeError(
+                    f"Array `file_formats` must contain only strings; got {type(i[1]).__name__} instead (Array index: [{i[0]}])."
+                )
 
         # Verifying file extension and path
         if Path(path).suffix not in file_formats:
-            raise JSONFileError(f'Supported file extensions are {", ".join(file_formats)}; got {Path(path).suffix} instead.')
+            raise JSONFileError(
+                f'Supported file extensions are {", ".join(file_formats)}; got {Path(path).suffix} instead.'
+            )
 
         if not os.path.exists(path):
-            raise FileNotFoundError(f'File `{path}` is not found.')
+            raise FileNotFoundError(f"File `{path}` is not found.")
 
-
-        file = open(path, 'r')
+        file = open(path, "r")
         cont = file.read()
         file.close()
 
-        if cont == None or cont == '':
-            file = open(path, 'w')
+        if cont == None or cont == "":
+            file = open(path, "w")
             file.write(JSON.dumps({}))
             file.close()
-        
-        file = open(path, 'r')
+
+        file = open(path, "r")
         cont = file.read()
         file.close()
 
@@ -90,7 +103,7 @@ class service:
     def check_json_path(self, path: str, json: dict) -> bool:
         """
         Check if path exists in JSON
-        
+
         This function will check if given path exists in given JSON object.
 
         Parameters: `path : str` specifies property path, that needs to be checked.
@@ -105,14 +118,17 @@ class service:
         """
 
         if type(path) != str:
-            raise IncorrectFunctionParameterTypeError('path', 'str', type(path).__name__)
+            raise IncorrectFunctionParameterTypeError(
+                "path", "str", type(path).__name__
+            )
 
-        if path == '':
-            raise JSONPathError('Given path is empty.')
+        if path == "":
+            raise JSONPathError("Given path is empty.")
 
         if type(json) != dict:
-            raise IncorrectFunctionParameterTypeError('json', 'dict', type(json).__name__)
-
+            raise IncorrectFunctionParameterTypeError(
+                "json", "dict", type(json).__name__
+            )
 
         js_expr = jsonpath.parse(path)
 
@@ -120,7 +136,7 @@ class service:
             return True
         else:
             return False
-    
+
     def check_file_path(self, path: str) -> bool:
         """
         Check if specified file path exists.
@@ -138,13 +154,14 @@ class service:
         """
 
         if type(path) != str:
-            raise IncorrectFunctionParameterTypeError('path', 'str', type(path).__name__)
+            raise IncorrectFunctionParameterTypeError(
+                "path", "str", type(path).__name__
+            )
 
-        if path == '':
-            raise ValueError('Parameter `path` is an empty string.')
+        if path == "":
+            raise ValueError("Parameter `path` is an empty string.")
 
         if os.path.exists(path):
             return True
         else:
             return False
-        
