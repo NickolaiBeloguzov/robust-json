@@ -9,6 +9,12 @@ You can install this package directly from [PyPI](https://pypi.org/project/robus
     pip install robust-json 
 This library is supported on python 3.x only.
 
+## Contributing
+If you want to improve this project, first discuss your idea by opening a new issue. After that fork this repository and implement this awesome feature or fix this annoying bug. Then create a new PR and wait for approval. 
+
+*Note: please read [contributing.md](https://github.com/NickolaiBeloguzov/robust-json/blob/master/CONTRIBUTING.md) file first. There you can find code of conduct and useful information regarding contribution process.*
+    
+
 ## Modules
 
 This library includes 4 modules:
@@ -926,6 +932,6 @@ This module provides some useful methods that can reduce development time.
     print(rev_arr)
     # Output: ['c', 'b', 'a']
     ```
-    
+
 
 
