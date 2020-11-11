@@ -17,7 +17,7 @@ with open("README.md", "r") as f:
 
 setuptools.setup(
     name="robust-json",  # or robust_json
-    version="1.1.6",
+    version="1.1.7",
     author="Nickolai Beloguzov",
     author_email="nickolai.beloguzov@gmail.com",
     packages=setuptools.find_packages(),
