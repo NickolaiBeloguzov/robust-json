@@ -22,4 +22,6 @@
 # Temp config file
 /*.config.md
 
+/deploy.py
+
 
