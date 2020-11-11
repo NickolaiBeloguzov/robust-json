@@ -12,8 +12,21 @@
 
 from robust_json.errors import IncorrectFunctionParameterTypeError
 
-def reverse_array(array: list):
+
+def reverse_array(array: list) -> list:
+    """
+    Reverse an array
+
+    This function reverses an array and returns it.
+
+    This function will raise an `IncorrectFunctionParameterTypeError` exception if `array`
+    paramete has an incorrect type.
+    This function raises any additional exceptions if occurred.
+
+    For more information about this method, please visit:
+    https://github.com/NickolaiBeloguzov/robust-json/blob/master/README.md#object-module-methods-and-properties
+    """
     if type(array) != list:
-        raise IncorrectFunctionParameterTypeError('array', 'list', type(array).__name__)
+        raise IncorrectFunctionParameterTypeError("array", "list", type(array).__name__)
 
     return array[::-1]

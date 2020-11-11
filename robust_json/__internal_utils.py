@@ -35,26 +35,25 @@ class service:
     def __init__(self):
         pass
 
-    def check_file(self, path: str, file_formats: list) -> bool:
+    def check_file(self, path: str, file_formats: list[str]) -> bool:
         """
         Check if source file is ready for processing.
 
-        This function will check if given file exists, has a correct extension and
-        contains valid JSON.
+        This function will check if file exists, has a correct extension and
+        contains valid JSON (JSON that can be parsed).
 
-        Parameters: `path : str` specifies path to source file, that need to be checked.
-        `file_formats : list of str` is an array of all possible file extensions. If source
-        file extension is not present here, an exception will be raised.
+        Parameters: `path : str` specifies path to the file, that need to be checked.
+        `file_formats : list of str` contains all supported file extensions. If source
+        file extension is not supported, this method will raise an exception.
 
-        This file will return a boolean: `True` - file is supported and is ready for processing,
-        `False` - Something is wrong with the contents of file. If file is empty, an empty JSON
-        object will be added. In this case, functtion will still return `True`.
+        This function returnsn a boolean: `True` - file is supported and is ready for processing,
+        `False` - Something is wrong with the file. If file is empty, this method will add an empty object ({}) there.
+        In this case, function will return `True`.
 
         This function will raise a `JSONFileError` if file extension is not supported.
-        This function will raise a `FileNotFoundError` if specified file is not found.
-        If exception is raised, `None` will be returned.
+        This function will raise a `FileNotFoundError` if specified file doesn't exist or cannot be accessed.
         """
-        # Checking parameter type
+        # Checking parameters type
         if type(path) != str:
             raise IncorrectFunctionParameterTypeError(
                 "path", "str", type(path).__name__
@@ -65,7 +64,7 @@ class service:
                 "file_formats", "str", type(file_formats).__name__
             )
 
-        # Checking extensions array items type
+        # Checking type of each array element
         for i in enumerate(file_formats):
             if type(i[1]) != str:
                 raise TypeError(
@@ -78,6 +77,7 @@ class service:
                 f'Supported file extensions are {", ".join(file_formats)}; got {Path(path).suffix} instead.'
             )
 
+        # If file does not exist, raise an exception
         if not os.path.exists(path):
             raise FileNotFoundError(f"File `{path}` is not found.")
 
@@ -86,52 +86,56 @@ class service:
         file.close()
 
         if cont == None or cont == "":
+            # If file is empty, write empty dictionary there and close it
             file = open(path, "w")
             file.write(JSON.dumps({}))
             file.close()
 
+        # Read this file again
         file = open(path, "r")
         cont = file.read()
         file.close()
 
         try:
-            js_parse = JSON.loads(cont)
+            # Try to deserialize JSON fron file
+            JSON.loads(cont)
             return True
         except:
             return False
 
     def check_json_path(self, path: str, json: dict) -> bool:
         """
-        Check if path exists in JSON
+        Check if JSON path exists
 
-        This function will check if given path exists in given JSON object.
+        This function will check if given JSON path exists in specified JSON object.
 
-        Parameters: `path : str` specifies property path, that needs to be checked.
-        `json : dict` specifies Python dictionary (JSON object), where given path
+        Parameters: `path : str` specifies property path that needs to be checked.
+        `json : dict` specifies Python dictionary (JSON object), where this JSON path
         needs to be present.
 
-        This function will return `True` if path is found and `False` if path could not be
-        located.
+        This function returns `True` if path is found and `False` if path cannot be
+        accessed (does not exist).
 
-        This function will raise a `TypeError` exception if either of parameters has an incorrect type.
-        This function will raise a `JSONPathError` exception is given path is empty.
+        This function raises a `IncorrectFunctionParameterTypeError` exception if one or more of its parameters have incorrect types.
+        This function raises a `JSONPathError` exception is JSON path is equal to an empty string.
         """
-
+        # Checking types of functions' parameters
         if type(path) != str:
             raise IncorrectFunctionParameterTypeError(
                 "path", "str", type(path).__name__
             )
 
         if path == "":
-            raise JSONPathError("Given path is empty.")
+            raise JSONPathError("JSON path is empty.")
 
         if type(json) != dict:
             raise IncorrectFunctionParameterTypeError(
                 "json", "dict", type(json).__name__
             )
 
-        js_expr = jsonpath.parse(path)
+        js_expr = jsonpath.parse(path)  # Parsing JSON using JSON path
 
+        # If path is valid, return True. Otherwise return False
         if js_expr.find(json):
             return True
         else:
@@ -139,17 +143,16 @@ class service:
 
     def check_file_path(self, path: str) -> bool:
         """
-        Check if specified file path exists.
+        Check if file exists.
 
-        Parameters: `path : str` specifies the file path that needs to
-        be checked.
+        Parameters: `path : str` specifies the path to the file.
 
-        This function will return `True` if this file path exists on the hard drive,
-        otherwise it will return `False`
+        This function returns `True` if file exists,
+        otherwise it returns `False`
 
-        This function will raise a `IncorrectFunctionParameterTypeError` if `path` parameter
+        This function raises an `IncorrectFunctionParameterTypeError` if `path` parameter
         has an incorrect type.
-        This function will raise a `ValueError` exception if `path` parameter is
+        This function raises a `ValueError` exception if `path` parameter is
         equal to an empty string.
         """
 
