@@ -3,868 +3,965 @@
 The robust-json package is a lightweight, but capable library for working with JSON files and objects in Python.
 
 ## Installation
+
 <!--- TODO Add link to PyPI --->
+
 You can install this package directly from [PyPI](https://pypi.org/project/robust-json/):
 
-    pip install robust-json 
+    pip install robust-json
+
 This library is supported on python 3.x only.
 
 ## Contributing
-If you want to improve this project, first discuss your idea by opening a new issue. After that fork this repository and implement this awesome feature or fix this annoying bug. Then create a new PR and wait for approval. 
 
-*Note: please read [contributing.md](https://github.com/NickolaiBeloguzov/robust-json/blob/master/CONTRIBUTING.md) file first. There you can find code of conduct and useful information regarding contribution process.*
-    
+If you want to improve this project, first discuss your idea by opening a new issue. After that fork this repository and implement this awesome feature or fix this annoying bug. Then create a new PR and wait for approval.
+
+_Note: please read [contributing.md](https://github.com/NickolaiBeloguzov/robust-json/blob/master/CONTRIBUTING.md) file first. There you can find code of conduct and useful information regarding contribution process._
 
 ## Modules
 
 This library includes 4 modules:
 
-* [**file**](#file-mod): This module provides functionality for working with  JSON files.
-* [**object**](#obj-mod): This module provides functionality for working with JSON objects (Python dictionaries)
-_Note: the difference between file and object modules is that during initialization 'file' module expects path to JSON file while 'object' module expects a Python dictionary. For more information please read corresponding sections._
-* [**errors**](#err-mod): This module contains all exceptions that may be raised during package runtime.
-* [**ext**](#ext-mod): This module provides some extra functions that can be helpful while working with JSON.
+-   [**file**](#file-mod): This module provides functionality for working with JSON files.
+-   [**object**](#obj-mod): This module provides functionality for working with JSON objects (Python dictionaries)
+    _Note: the difference between file and object modules is that during initialization 'file' module expects path to JSON file while 'object' module expects a Python dictionary. For more information please read corresponding sections._
+-   [**errors**](#err-mod): This module contains all exceptions that may be raised during package runtime.
+-   [**ext**](#ext-mod): This module provides some extra functions that can be helpful while working with JSON.
 
 ## File module overview
+
 <div id='file-mod'><div>
 
 This module provides various methods for working with JSON files through _JsonFileParser_ class. It automatically parses and loads valid JSON from specified file and also checks if file is ready for processing. To access it, simply import _JsonFileParser_ from file module:
 
     from robust_json.file import JsonFileParser
+
 and initialize it:
 
     op = JsonFileParser(path_to_json_file)
-During initialization a *JSONFileError* exception may be raised. This means that parser could not process contents of specified file or file has an unsupported extension. Also during this phase a *FileNotFoundError* may be raised marking that specified file doesn't exist.
+
+_Note: JsonFileParser now supports autosaving. If enabled, module will save active object after every change made to it and write it to specified file._
+
+To enable autosaving simply initialize this module with `autosave` parameter set to `True`:
+```
+  op = JsonFileParser(path_to_json_file, autosave=True)
+```
+_Note: you can also specify file for autosaver. Just pass `autosave_path` parameter with path to your file during initialization, like this:_
+```
+  op = JsonFileParser(path*to_json_file, autosave=True, autosave_path=path_to_autosave_file)
+```
+
+_If file does not exist, module will create one. If file does exist, it will be truncated and filled with serialized active object._
+
+During initialization a _JSONFileError_ exception may be raised. This means that parser could not process contents of specified file or file has an unsupported extension. Also during this phase a _FileNotFoundError_ may be raised marking that specified file doesn't exist. An _IncorrectFunctionParameterTypeError_ eception will be raised if one or more of parameters have incorrect types.
 
 ### File module methods and properties
 
-* **Properties**:
-  * **JsonFileParser.file_formats**
-    This property lists all file extensions supported by this module in form of an array. At the moment only _.json_ and _.txt_ files are supported. This is used during class initialization to determine if file can pe processed.
-  * **JsonFileParser.path**
-    This property returns source file path
-  * **JsonFileParser.active_json**
-    This property returns JSON object with all the recent changes.
-  * **JsonFileParser.backup**
-    This property returns the initial JSON object, ignoring all the recent changes.
-    These two last properties may be confusing, so here is an example
-    (_Note: see corresponding documentation section for JsonFileParser.append() function_):
-    ```
-    from robust_json.file import JsonFileParser
-
-    op = JsonFileParser('test1.json') #Class initialization
-    # Contents of 'test1.json' file: {'test_key': 'test_value'}
-
-    op.append('$', {'append_key': 'append_value'})
-    print(op.active_json)
-    # Output: {'test_key': 'test_value', 'append_key': 'append_value'}
-
-    print(op.backup)
-    # Output: {'test_key': 'test_value'}
-
-    # As you can see, JsonFileParser.backup property is equal to initial contents of 'test1.json' file.
-    # This is useful when there is a need to discard all changes to JSON object.
-    ```
-* **Methods**:
-  * **JsonFileParser.get_json_from_file()**
-    This method retrieves all JSON from file and returns it as a Python dictionary. It's called automatically when specified file is processed for the first time.
-    ```
-    from robust_json.file import JsonFileParser
-
-    op = JsonFileParser('test1.json') # JsonFileParser.get_json_from_file() function is called here
-    ```
-  * **JsonFileParser.get_key_value(json_path: str)**
-    This method accesses a value from specific key:value pair in JSON object and returns it.
-    _json_path:str_ parameter specifies a path to key:value pair (e.g. field0.field1.[...].fieldn).
-    Example:
-    ```
-    from robust_json.file import JsonFileParser
-
-    op = JsonFileParser('test2.json')
-    # Contents of 'test2.json' file: {'test_key': 'test_value', 'test_arr': [1, 2, 3]}
-
-    val = op.get_key_value('test_key')
-    print(val)
-    # Output: 'test_value'
-
-    # You can use this method to retrieve an element from JSON array
-    val = op.get_key_value('test_arr[1]')
-    print(val)
-    # Output: 2
-    ```
-    This function will raise an *IncorrectFunctionParameterTypeError* if its parameter has an incorrect type. This function will also raise a *JSONPathError* if specified JSON path is not valid (does not exist or could not be accessed).
-
-  * **JsonFileParser.append(json_path: str, append_value: any, append_at_end: bool = False)**
-    This method appends value to existing JSON object and returns a Python dictionary with updated contents.
-    *json_path:str* parameter specifies a path where new value will be added. To append value to the root of JSON object, *json_path* needs to be equal to '$'. *append_value:any* parameter specifies a value that will be appended. *append_at_end:bool* controls the behaviour of this function regarding JSON arrays of objects (structures like this: [{}, {}, {}, ...]) and general arrays (structures like this: [a, b, c, ...]). It has no influence on other structures. If set to False, function will try to add given value to each object of an array. If set to True, function will try to append given value at the end of an array. (see examples below). This function will return a Python dictionary with updated JSON.
-
-    This function will raise a *IncorrectFunctionParameterTypeEroor* exception if its parameter(-s) has(-ve) an incorrect type. This function will also raise a *ValueError* exception if 'append_value' is empty (is equal to empty string, empty array, empty dictionary, etc.). This function will raise a *JSONPathError* if provided path is not valid (does not exist or could not be accessed). This function will raise any additional exceptions if occurred.
-
-    Examples:
-
-    Adding a simple key:value pair to the root of an object
-    ```
-    from robust_json.file import JsonFileParser
-
-    op = JsonFileParser('test3.json')
-    # Contents of 'test3.json' file: {'test_key': 'test_value'}
-
-    op.append('$', {'add_key': 'add_var'})
-    print(op.active_json)
-    # Output: {'test_key': 'test_value', 'add_key': 'add_var'}
-    ```
-
-    Adding new object to the array of objects
-    ```
-    from robust_json.file import JsonFileParser
-
-    op = JsonFileParser('users.json')
-    # Contents of 'users.json' file: {'users': [{'id': 1, 'name': 'Ken'}, {'id': 2, 'name': 'Alec'}]}
-
-    op.append('users', {'id': 3, 'name': 'Liza'})
-    print(op.active_json)
-    # Output: {'users': [{'id': 3, 'name': 'Lisa'}, {'id': 3, 'name': 'Lisa'}]}
-
-    # This is not good!
-    # This happened because 'append_at_end' parameter is set to False.
-
-    # Function appended new object to each of the objects in the array and new values have overwritten the old 
-    # ones.
-
-    # Note: we can discard these unwanted/malicious changes using JsonFileParser.reset() function with 
-    # its parameter set to True. (please refer to corresponding section in docs)
-
-    op.reset(True)
-    print(op.active_json)
-    # Output: {'users': [{'id': 1, 'name': 'Ken'}, {'id': 2, 'name': 'Alec'}]}
-
-    # We need to set 'append_at_end' parameter to True to avoid this.
-
-    op.append('users', {'id': 3, 'name': 'Liza'}, True)
-    print(op.active_json)
-    # Output: {'users': [{'id': 1, 'name': 'Ken'}, {'id': 2, 'name': 'Alec'}, {'id': 3, 'name': 'Lisa'}]}
-    ```
-
-    Adding a key:value pair to each object of an array
-    ```
-    from robust_json.file import JsonFileParser
-
-    op = JsonFileParser('users.json')
-    # Contents of 'users.json' file: {'users': [{'id': 1, 'name': 'Ken'}, {'id': 2, 'name': 'Alec'}]}
-
-    op.append('users', {'role': 'guest'})
-    print(op.active_json)
-    # Output: {'users':[{'id':1, 'name':'Ken', 'role':'guest'}, {'id':2, 'name':'Alec', 'role':'guest'}]}
-    ```
-
-    Adding new element to an array of elements:
-    ```
-    from robust_json.file import JsonFileParser
-
-    op = JsonFileParser('test4.json')
-    # Contents of 'test4.json' file: {'colors': ['cyan', 'magenta']}
-
-    op.append('colors', 'yellow')
-    print(op.active_json)
-    # Output: {'colors': ['cyan', 'magenta']}
-
-    # Nothing happened.
-    # That's because 'append_at_end' parameter is set to False.
-    # Function tried to append new string to each string and failed.
-    # To fix this, we need to set 'append_at_end' parameter to True.
-
-    op.append('colors', 'yellow', True)
-    print(op.active_json)
-    # Output: {'colors': ['cyan', 'magenta', 'yellow']}
-    ```
-  * **JsonFileParser.update_value(json_path: str, key_or_index: Union[str, int], new_value: any, strict_mode: bool = False)**
-    <div id='file-upd'></div>
-
-    This function will update value in key:value pair and return a Python dictionary with updated contents. 
-    *json_path:str* parameter specifies a path to key:value pair/array/etc. parent that needs to be updated. (To update value in the root of JSON object, *json_path* needs to be equal to '$') while *key_or_index:Union[str, int]* parameter specifies key (if it's an object) or array index (if it's an array). This implies that if we need to update key with path 'field0.field1.upd_key', then *json_path* will be equal to 'field0.field1' and *key_or_index* parameter will be equal to 'upd_key'. *Note: if you use an array index while 'json_path' parameter is pointing to JSON object, or if you use a property name while 'json_path' is pointing to JSON array, an exception will be raised* (See examples below). *new_value:any* specifies value that will overwrite the old one and *strict_mode:bool* enables Strict Mode. By default this mode is turned off. If turned on, this method will ensure that new value has the same type as the old one (if old value is a string, then the new one also needs to be a string, etc.). If types are not matching, an exception will be raised.
-
-    This function will raise an *IncorrectFunctionParameterTypeError* exception is its parameter(-s) has(-ve) an incorrect type. This function will also raise a *JSONStrictModeError* in case of mismatched types if Strict Mode is enabled and a *JSONPathError* exception if JSON path is not valid (doesn't exist or could not be accessed). This function will raise any additional exceptions if occured.
-
-    Examples:
-
-    Updating key:value pair in root of the object:
-    ```
-    from robust_json.file import JsonFileParser
-
-    op = JsonFileParser('test5.json')
-    # Contents of 'test5.json' file: {'app_name': 'HomeCare', 'version', '1.0.0'}
-
-    op.update_value('$', 'version': '1.0.5')
-    print(op.active_json)
-    # Output: {'app_name': 'HomeCare', 'version': '1.0.5'}
-    ```
-
-    Updating item in an array:
-    ```
-    from robust_json.file import JsonFileParser
-
-    op = JsonFileParser('test6.json')
-    # Contents of 'test6.json' file: {'app_name': 'HomeCare', 'authors': ['Alec Hammer', 'Nick Rogers']}
-
-    op.update_value('authors', 1, 'Nick Rogerson')
-    print(op.active_json)
-    # Output: {'app_name': 'HomeCare', 'authors': ['Alec Hammer', 'Nick Rogerson']}
-    ```
-    ```
-    # Note: if you don't know the index of an item, you can use 
-    # 'get_item_index()' function from 'robust_json.ext' module to get it. 
-    # (See corresponding section in the docs)
-
-    from robust_json.file import JsonFileParser
-    import robust_json.ext as ext
-
-    op = JsonFileParser('test6.json')
-    # Contents of 'test6.json' file: {'app_name': 'HomeCare', 'authors': ['Alec Hammer', 'Nick Rogers']}
-
-    # Getting an array for future use
-    authors_array = op.get_key_value('authors')
-    print(authors_array)
-    # Output: ['Alec Hammer', 'Nick Rogers']
-
-    # Finding the index
-    index = ext.get_item_index('Alec Hammer', authors_array, False)
-    print(index)
-    # Output: 0
-
-    #Updating value
-    op.update_value('authors', index, 'Alain Hammer')
-    print(op.active_json)
-    # Output: {'app_name': 'HomeCare', 'authors': ['Alain Hammer', 'Nick Rogers']}
-    ```
-    Updating value with Strict Mode:
-    ```
-    from robust_json.file import JsonFileParser
-
-    op = JsonFileParser('test6.json')
-    # Contents of 'test6.json' file: {'app_name': 'HomeCare', 'app_id': 1077}
-
-    op.update_value('$', 'app_id', 'this is a string', True)
-    # A 'StrictModeError' exception was raised.
-    # This happened because new value has a different type.
-    # Let's try again, but with integer.
-
-    op.update_value('$', 'app_id', 1080, True)
-    print(op.active_json)
-    # Output: {'app_name': 'HomeCare', 'app_id': 1080}
-    ```
-
-  * **JsonFileParser.delete(json_path: str, key_or_index: Union[str, int])**
-    This function will delete an element from JSON and return a Python dictionary with updated contents.
-    *json_path:str* parameter specifies a path to key:value pair/array/etc. parent that needs to be deleted. (To delete value in the root of JSON object, *json_path* needs to be equal to '$') while *key_or_index:Union[str, int]* parameter specifies key (if it's an object) or array index (if it's an array). This implies that if we need to delete key with path 'field0.field1.del_key', then *json_path* will be equal to 'field0.field1' and *key_or_index* parameter will be equal to 'del_key'. *Note: if you use an array index while 'json_path' parameter is pointing to JSON object, or if you use a property name while 'json_path' is pointing to JSON array, an exception will be raised* (See examples below).
-    This function will raise an *IncorrectFunctionParameterTypeError* exception is its parameter(-s) has(-ve) an incorrect type. This function will also raise a *JSONPathError* exception if JSON path is not valid (doesn't exist or could not be accessed). This function will raise any additional exceptions if occurred.
-
-    Examples:
-
-    Deleting key:value pair in root of the object:
-    ```
-    from robust_json.file import JsonFileParser
-
-    op = JsonFileParser('test7.json')
-    # Contents of 'test5.json' file: {'test_key': 'test_val', 'del_key': 'del_val'}
+-   **Properties**:
 
-    op.delete('$', 'del_key')
-    print(op.active_json)
-    # Output: {'test_key': 'test_val'}
-    ```
-    Deleting item in an array:
-    ```
-    from robust_json.file import JsonFileParser
-
-    op = JsonFileParser('test8.json')
-    # Contents of 'test6.json' file: {'app_name': 'PetShopify', 'authors': ['Alec Hammer', 'Nick Rogers']}
-
-    op.delete('authors', 1)
-    print(op.active_json)
-    # Output: {'app_name': 'PetShopify', 'authors': ['Alec Hammer']}
-    ```
-    ```
-    # Note: if you don't know the index of an item, you can use 'get_item_index()' 
-    # function from 'robust_json.ext' module to get it. (See corresponding section in the docs)
+    -   **JsonFileParser.file_formats**
+        This property lists all file extensions supported by this module in form of an array. At the moment only _.json_ and _.txt_ files are supported. This is used during class initialization to determine if file can pe processed.
+    -   **JsonFileParser.path**
+        This property returns source file path
+    -   **JsonFileParser.active_json**
+        This property returns JSON object with all the recent changes.
+    -   **JsonFileParser.backup**
+        This property returns the initial JSON object, ignoring all the recent changes.
+        These two last properties may be confusing, so here is an example
+        (_Note: see corresponding documentation section for JsonFileParser.append() function_):
 
-    from robust_json.file import JsonFileParser
-    import robust_json.ext as ext
+        ```
+        from robust_json.file import JsonFileParser
 
-    op = JsonFileParser('test9.json')
-    # Contents of 'test6.json' file: {'app_name': 'PetShopify', 'authors': ['Alec Hammer', 'Nick Rogers']}
+        op = JsonFileParser('test1.json') #Class initialization
+        # Contents of 'test1.json' file: {'test_key': 'test_value'}
 
-    # Getting an array for future use
-    authors_array = op.get_key_value('authors')
-    print(authors_array)
-    # Output: ['Alec Hammer', 'Nick Rogers']
+        op.append('$', {'append_key': 'append_value'})
+        print(op.active_json)
+        # Output: {'test_key': 'test_value', 'append_key': 'append_value'}
 
-    # Finding the index
-    index = ext.get_item_index('Alec Hammer', authors_array, False)
-    print(index)
-    # Output: 0
+        print(op.backup)
+        # Output: {'test_key': 'test_value'}
 
-    #Updating value
-    op.delete('authors', index)
-    print(op.active_json)
-    # Output: {'app_name': 'HomeCare', 'authors': ['Nick Rogers']}
-    ```
-  * **JsonFileParser.minify()**
-    This function will remove all indentations in JSON file. Basically it will compress all JSON into one line.
+        # As you can see, JsonFileParser.backup property is equal to initial contents of 'test1.json' file.
+        # This is useful when there is a need to discard all changes to JSON object.
+        ```
 
-    This function does not return any value.
-  * **JsonFileParser.prettify(indent: int = 4)**
-    This function will add indentations to JSON in source file to improve its readability. *indent:int* parameter specifies the number of spaces. By default it is equal to 4. This function is a complete opposite to *JsonFileParser.minify()*
+-   **Methods**:
 
-    This function does not return any value.
-
-    This function will raise an *IncorrectFunctionParameterTypeError* if its parameter has an incorrect type.
-
-  * **JsonFileParser.reset(discard_active_object: bool = False)**
-    This function will reset active JSON object, removing any changes made to it.
-    *discard_active_object:bool* parameter controls the behaviour of this function regarding the active JSON object (JsonFileParser.active_json property). If set to False, this method will simply return an initial object and keep all the changes to the actove JSON. If set to True, this function will still return the initial object, but will also reset the active one, and all changes will be gone for good.
-
-    This function will raise an *IncorrectFunctionParameterTypeError* if its parameter has an incorrect type.
-
-    Examples:
-
-    Getting an intial object and storing it in a variable:
-
-    ```
-    from robust_json.file import JsonFileParser
-
-    op = JsonFileParser('test10.json')
-    # Contents of `test10.json` file: { "simple_key": "simple_value" }
-
-    op.append('$', { "test_arr": [1, 2, 3] })
-    # We appended key:value pair to distinguish objects among each other.
-
-    initial = op.reset()
-    print(initial)
-    # initial = { "simple_key": "simple_value" }
-
-    print(op.active_json)
-    # Output: { "simple_key": "simple_value", "test_arr": [1, 2, 3] }
-    # Calling this method without parameters simply makes it return initial
-    # object, saving the active one for future use.
-    ```
-
-    Getting an initial object and resetting an active one:
-
-    ```
-    from robust_json.file import JsonFileParser
-
-    op = JsonFileParser('test10.json')
-    # Contents of `test10.json` file: { "simple_key": "simple_value" }
-
-    op.append('$', { "test_arr": [1, 2, 3] })
-    # We appended key:value pair to distinguish objects among each other.
-
-    initial = op.reset(True)
-    print(initial)
-    # Output: { "simple_key": "simple_value" }
-
-    print(op.active_json)
-    # Output: { "simple_key": "simple_value" }
-
-    # Calling this method with 'discard_active_object' set to True.
-    # makes it completely revert all changes to active object, making it
-    # equal to the initial one.
-
-    # Warning!
-    # Note: if called with 'discard_active_object' set to True, there
-    # is no way of going back. All changes will be gone for good.
-    # Please use this with extreme caution!
-    ```
-  * **JsonFileParser.save_to_file(path: str = None, prettify: bool = True, create_file: bool = False)**
-    This function will save active JSON object into file.
-    *path:str* parameter specifies path to the file. If left empty, active object will be saved into source file. *prettify:bool* parameter enables indentations. By default it is set to True. If set to False, JSON will be compressed into one line. *create_file:bool* parameter enables file creation. If set to True, this function will create a new file and save active object there, but obly if *path* parameter is pointing to non-existing file. *Note: if create_file is set to True ans path is pointing to an existing file, an exception will be raised.*
-
-    This function will raise a *JSONFileError* if end file is not supporting JSON (has an unsupported extension). This function will raise a *FileExistsError* if *create_file* is set to True and file already exists under specified path.
-    This function will raise a *FileNotFoundError* if *create_file* is set to False and file could not be located under specified path. This function will raise any additional exceptions if occurred.
-
-    Examples:
-
-    Saving active object to the source file:
-
-    ```
-    from robust_json.file import JsonFileParser
-
-    op = JsonFileParser('data.json')
-    # Contents of 'data.json' file: {'name': 'Helen Anderson', 'employee_id': 107756}
-
-    op.update_value('$', 'employee_id', 107744)
-    print(op.active_json)
-    # Output: {'name': 'Helen Anderson', 'employee_id': 107744}
-
-    op.save_to_file()
-    # Contents of 'data.json' file: {'name': 'Helen Anderson', 'employee_id': 107744}
-
-    # Calling 'save_to_file' method without any arguments makes it 
-    # overwrite an object in source file ('data.json' in this case) 
-    # with the value of JsonFileParser.active_json property.
-    ```
-    Saving active object to a different file (existing):
-    ```
-    from robust_json.file import JsonFileParser
-
-    op = JsonFileParser('data.json')
-    # Contents of 'data.json' file: {'name': 'Helen Anderson', 'employee_id': 107756}
-
-    op.update_value('$', 'employee_id', 107744)
-    print(op.active_json)
-    # Output: {'name': 'Helen Anderson', 'employee_id': 107744}
-
-    op.save_to_file(path='new_data.json')
-    # Contents of 'new_data.json' file: {'name': 'Helen Anderson', 'employee_id': 107744}
-    # Calling this function with different 'path' parameter will 
-    # make this function save the value of JsonFileParser.active_json property into
-    # existing file ('new_data.json' in this case). But if file cannot be found, a 'FileNotFoundError' 
-    # exception will be raised.
-    ```
-    Saving active object to a different file (non-existing):
-    ```
-    from robust_json.file import JsonFileParser
-
-    op = JsonFileParser('data.json')
-    # Contents of 'data.json' file: {'name': 'Helen Anderson', 'employee_id': 107756}
-
-    op.update_value('$', 'employee_id', 107744)
-    print(op.active_json)
-    # Output: {'name': 'Helen Anderson', 'employee_id': 107744}
-
-    op.save_to_file(path='new_data.json')
-    # A 'FileNotFoundError' exception has been raised.
-    # It happened because this file does not exist.
-    # To fix this we need to set 'create_file' parameter to True.
-
-    op.save_to_file(path='new_data.json', create_file=True)
-    # Contents of 'new_data.json' file: {'name': 'Helen Anderson', 'employee_id': 107744}
-    # Calling the function with 'create_file' set to True and different path makes it create 
-    # a new file and save the value of JsonFileParser.active_json property there.
-    # But if file already exists, a 'FileExistsError' will be raised.
-    ```
+    -   **JsonFileParser.get_json_from_file()**
+        This method retrieves all JSON from file and returns it as a Python dictionary. It's called automatically when specified file is processed for the first time.
+
+        ```
+        from robust_json.file import JsonFileParser
+
+        op = JsonFileParser('test1.json') # JsonFileParser.get_json_from_file() function is called here
+        ```
+
+    -   **JsonFileParser.get_key_value(json_path: str)**
+        This method accesses a value from specific key:value pair in JSON object and returns it.
+        _json_path:str_ parameter specifies a path to key:value pair (e.g. field0.field1.[...].fieldn).
+        Example:
+
+        ```
+        from robust_json.file import JsonFileParser
+
+        op = JsonFileParser('test2.json')
+        # Contents of 'test2.json' file: {'test_key': 'test_value', 'test_arr': [1, 2, 3]}
+
+        val = op.get_key_value('test_key')
+        print(val)
+        # Output: 'test_value'
+
+        # You can use this method to retrieve an element from JSON array
+        val = op.get_key_value('test_arr[1]')
+        print(val)
+        # Output: 2
+        ```
+
+        This function will raise an _IncorrectFunctionParameterTypeError_ if its parameter has an incorrect type. This function will also raise a _JSONPathError_ if specified JSON path is not valid (does not exist or could not be accessed).
+
+    -   **JsonFileParser.append(json_path: str, append_value: any, append_at_end: bool = False)**
+        This method appends value to existing JSON object and returns a Python dictionary with updated contents.
+        _json_path:str_ parameter specifies a path where new value will be added. To append value to the root of JSON object, _json_path_ needs to be equal to '$'. _append_value:any_ parameter specifies a value that will be appended. _append_at_end:bool_ controls the behaviour of this function regarding JSON arrays of objects (structures like this: [{}, {}, {}, ...]) and general arrays (structures like this: [a, b, c, ...]). It has no influence on other structures. If set to False, function will try to add given value to each object of an array. If set to True, function will try to append given value at the end of an array. (see examples below). This function will return a Python dictionary with updated JSON.
+
+        This function will raise a _IncorrectFunctionParameterTypeEroor_ exception if its parameter(-s) has(-ve) an incorrect type. This function will also raise a _ValueError_ exception if 'append*value' is empty (is equal to empty string, empty array, empty dictionary, etc.). This function will raise a \_JSONPathError* if provided path is not valid (does not exist or could not be accessed). This function will raise any additional exceptions if occurred.
+
+        Examples:
+
+        Adding a simple key:value pair to the root of an object
+
+        ```
+        from robust_json.file import JsonFileParser
+
+        op = JsonFileParser('test3.json')
+        # Contents of 'test3.json' file: {'test_key': 'test_value'}
+
+        op.append('$', {'add_key': 'add_var'})
+        print(op.active_json)
+        # Output: {'test_key': 'test_value', 'add_key': 'add_var'}
+        ```
+
+        Adding new object to the array of objects
+
+        ```
+        from robust_json.file import JsonFileParser
+
+        op = JsonFileParser('users.json')
+        # Contents of 'users.json' file: {'users': [{'id': 1, 'name': 'Ken'}, {'id': 2, 'name': 'Alec'}]}
+
+        op.append('users', {'id': 3, 'name': 'Liza'})
+        print(op.active_json)
+        # Output: {'users': [{'id': 3, 'name': 'Lisa'}, {'id': 3, 'name': 'Lisa'}]}
+
+        # This is not good!
+        # This happened because 'append_at_end' parameter is set to False.
+
+        # Function appended new object to each of the objects in the array and new values have overwritten the old
+        # ones.
+
+        # Note: we can discard these unwanted/malicious changes using JsonFileParser.reset() function with
+        # its parameter set to True. (please refer to corresponding section in docs)
+
+        op.reset(True)
+        print(op.active_json)
+        # Output: {'users': [{'id': 1, 'name': 'Ken'}, {'id': 2, 'name': 'Alec'}]}
+
+        # We need to set 'append_at_end' parameter to True to avoid this.
+
+        op.append('users', {'id': 3, 'name': 'Liza'}, True)
+        print(op.active_json)
+        # Output: {'users': [{'id': 1, 'name': 'Ken'}, {'id': 2, 'name': 'Alec'}, {'id': 3, 'name': 'Lisa'}]}
+        ```
+
+        Adding a key:value pair to each object of an array
+
+        ```
+        from robust_json.file import JsonFileParser
+
+        op = JsonFileParser('users.json')
+        # Contents of 'users.json' file: {'users': [{'id': 1, 'name': 'Ken'}, {'id': 2, 'name': 'Alec'}]}
+
+        op.append('users', {'role': 'guest'})
+        print(op.active_json)
+        # Output: {'users':[{'id':1, 'name':'Ken', 'role':'guest'}, {'id':2, 'name':'Alec', 'role':'guest'}]}
+        ```
+
+        Adding new element to an array of elements:
+
+        ```
+        from robust_json.file import JsonFileParser
+
+        op = JsonFileParser('test4.json')
+        # Contents of 'test4.json' file: {'colors': ['cyan', 'magenta']}
+
+        op.append('colors', 'yellow')
+        print(op.active_json)
+        # Output: {'colors': ['cyan', 'magenta']}
+
+        # Nothing happened.
+        # That's because 'append_at_end' parameter is set to False.
+        # Function tried to append new string to each string and failed.
+        # To fix this, we need to set 'append_at_end' parameter to True.
+
+        op.append('colors', 'yellow', True)
+        print(op.active_json)
+        # Output: {'colors': ['cyan', 'magenta', 'yellow']}
+        ```
+
+    -   **JsonFileParser.update_value(json_path: str, key_or_index: Union[str, int], new_value: any, strict_mode: bool = False)**
+        <div id='file-upd'></div>
+
+        This function will update value in key:value pair and return a Python dictionary with updated contents.
+        _json_path:str_ parameter specifies a path to key:value pair/array/etc. parent that needs to be updated. (To update value in the root of JSON object, _json_path_ needs to be equal to '$') while _key_or_index:Union[str, int]_ parameter specifies key (if it's an object) or array index (if it's an array). This implies that if we need to update key with path 'field0.field1.upd*key', then \_json_path* will be equal to 'field0.field1' and _key_or_index_ parameter will be equal to 'upd*key'. \_Note: if you use an array index while 'json_path' parameter is pointing to JSON object, or if you use a property name while 'json_path' is pointing to JSON array, an exception will be raised* (See examples below). _new_value:any_ specifies value that will overwrite the old one and _strict_mode:bool_ enables Strict Mode. By default this mode is turned off. If turned on, this method will ensure that new value has the same type as the old one (if old value is a string, then the new one also needs to be a string, etc.). If types are not matching, an exception will be raised.
+
+        This function will raise an _IncorrectFunctionParameterTypeError_ exception is its parameter(-s) has(-ve) an incorrect type. This function will also raise a _JSONStrictModeError_ in case of mismatched types if Strict Mode is enabled and a _JSONPathError_ exception if JSON path is not valid (doesn't exist or could not be accessed). This function will raise any additional exceptions if occured.
+
+        Examples:
+
+        Updating key:value pair in root of the object:
+
+        ```
+        from robust_json.file import JsonFileParser
+
+        op = JsonFileParser('test5.json')
+        # Contents of 'test5.json' file: {'app_name': 'HomeCare', 'version', '1.0.0'}
+
+        op.update_value('$', 'version': '1.0.5')
+        print(op.active_json)
+        # Output: {'app_name': 'HomeCare', 'version': '1.0.5'}
+        ```
+
+        Updating item in an array:
+
+        ```
+        from robust_json.file import JsonFileParser
+
+        op = JsonFileParser('test6.json')
+        # Contents of 'test6.json' file: {'app_name': 'HomeCare', 'authors': ['Alec Hammer', 'Nick Rogers']}
+
+        op.update_value('authors', 1, 'Nick Rogerson')
+        print(op.active_json)
+        # Output: {'app_name': 'HomeCare', 'authors': ['Alec Hammer', 'Nick Rogerson']}
+        ```
+
+        ```
+        # Note: if you don't know the index of an item, you can use
+        # 'get_item_index()' function from 'robust_json.ext' module to get it.
+        # (See corresponding section in the docs)
+
+        from robust_json.file import JsonFileParser
+        import robust_json.ext as ext
+
+        op = JsonFileParser('test6.json')
+        # Contents of 'test6.json' file: {'app_name': 'HomeCare', 'authors': ['Alec Hammer', 'Nick Rogers']}
+
+        # Getting an array for future use
+        authors_array = op.get_key_value('authors')
+        print(authors_array)
+        # Output: ['Alec Hammer', 'Nick Rogers']
+
+        # Finding the index
+        index = ext.get_item_index('Alec Hammer', authors_array, False)
+        print(index)
+        # Output: 0
+
+        #Updating value
+        op.update_value('authors', index, 'Alain Hammer')
+        print(op.active_json)
+        # Output: {'app_name': 'HomeCare', 'authors': ['Alain Hammer', 'Nick Rogers']}
+        ```
+
+        Updating value with Strict Mode:
+
+        ```
+        from robust_json.file import JsonFileParser
+
+        op = JsonFileParser('test6.json')
+        # Contents of 'test6.json' file: {'app_name': 'HomeCare', 'app_id': 1077}
+
+        op.update_value('$', 'app_id', 'this is a string', True)
+        # A 'StrictModeError' exception was raised.
+        # This happened because new value has a different type.
+        # Let's try again, but with integer.
+
+        op.update_value('$', 'app_id', 1080, True)
+        print(op.active_json)
+        # Output: {'app_name': 'HomeCare', 'app_id': 1080}
+        ```
+
+    -   **JsonFileParser.delete(json_path: str, key_or_index: Union[str, int])**
+        This function will delete an element from JSON and return a Python dictionary with updated contents.
+        _json_path:str_ parameter specifies a path to key:value pair/array/etc. parent that needs to be deleted. (To delete value in the root of JSON object, _json_path_ needs to be equal to '$') while _key_or_index:Union[str, int]_ parameter specifies key (if it's an object) or array index (if it's an array). This implies that if we need to delete key with path 'field0.field1.del*key', then \_json_path* will be equal to 'field0.field1' and _key_or_index_ parameter will be equal to 'del*key'. \_Note: if you use an array index while 'json_path' parameter is pointing to JSON object, or if you use a property name while 'json_path' is pointing to JSON array, an exception will be raised* (See examples below).
+        This function will raise an _IncorrectFunctionParameterTypeError_ exception is its parameter(-s) has(-ve) an incorrect type. This function will also raise a _JSONPathError_ exception if JSON path is not valid (doesn't exist or could not be accessed). This function will raise any additional exceptions if occurred.
+
+        Examples:
+
+        Deleting key:value pair in root of the object:
+
+        ```
+        from robust_json.file import JsonFileParser
+
+        op = JsonFileParser('test7.json')
+        # Contents of 'test5.json' file: {'test_key': 'test_val', 'del_key': 'del_val'}
+
+        op.delete('$', 'del_key')
+        print(op.active_json)
+        # Output: {'test_key': 'test_val'}
+        ```
+
+        Deleting item in an array:
+
+        ```
+        from robust_json.file import JsonFileParser
+
+        op = JsonFileParser('test8.json')
+        # Contents of 'test6.json' file: {'app_name': 'PetShopify', 'authors': ['Alec Hammer', 'Nick Rogers']}
+
+        op.delete('authors', 1)
+        print(op.active_json)
+        # Output: {'app_name': 'PetShopify', 'authors': ['Alec Hammer']}
+        ```
+
+        ```
+        # Note: if you don't know the index of an item, you can use 'get_item_index()'
+        # function from 'robust_json.ext' module to get it. (See corresponding section in the docs)
+
+        from robust_json.file import JsonFileParser
+        import robust_json.ext as ext
+
+        op = JsonFileParser('test9.json')
+        # Contents of 'test6.json' file: {'app_name': 'PetShopify', 'authors': ['Alec Hammer', 'Nick Rogers']}
+
+        # Getting an array for future use
+        authors_array = op.get_key_value('authors')
+        print(authors_array)
+        # Output: ['Alec Hammer', 'Nick Rogers']
+
+        # Finding the index
+        index = ext.get_item_index('Alec Hammer', authors_array, False)
+        print(index)
+        # Output: 0
+
+        #Updating value
+        op.delete('authors', index)
+        print(op.active_json)
+        # Output: {'app_name': 'HomeCare', 'authors': ['Nick Rogers']}
+        ```
+
+    -   **JsonFileParser.minify()**
+        This function will remove all indentations in JSON file. Basically it will compress all JSON into one line.
+
+        This function does not return any value.
+
+    -   **JsonFileParser.prettify(indent: int = 4)**
+        This function will add indentations to JSON in source file to improve its readability. _indent:int_ parameter specifies the number of spaces. By default it is equal to 4. This function is a complete opposite to _JsonFileParser.minify()_
+
+        This function does not return any value.
+
+        This function will raise an _IncorrectFunctionParameterTypeError_ if its parameter has an incorrect type.
+
+    -   **JsonFileParser.reset(discard_active_object: bool = False)**
+        This function will reset active JSON object, removing any changes made to it.
+        _discard_active_object:bool_ parameter controls the behaviour of this function regarding the active JSON object (JsonFileParser.active_json property). If set to False, this method will simply return an initial object and keep all the changes to the actove JSON. If set to True, this function will still return the initial object, but will also reset the active one, and all changes will be gone for good.
+
+        This function will raise an _IncorrectFunctionParameterTypeError_ if its parameter has an incorrect type.
+
+        Examples:
+
+        Getting an intial object and storing it in a variable:
+
+        ```
+        from robust_json.file import JsonFileParser
+
+        op = JsonFileParser('test10.json')
+        # Contents of `test10.json` file: { "simple_key": "simple_value" }
+
+        op.append('$', { "test_arr": [1, 2, 3] })
+        # We appended key:value pair to distinguish objects among each other.
+
+        initial = op.reset()
+        print(initial)
+        # initial = { "simple_key": "simple_value" }
+
+        print(op.active_json)
+        # Output: { "simple_key": "simple_value", "test_arr": [1, 2, 3] }
+        # Calling this method without parameters simply makes it return initial
+        # object, saving the active one for future use.
+        ```
+
+        Getting an initial object and resetting an active one:
+
+        ```
+        from robust_json.file import JsonFileParser
+
+        op = JsonFileParser('test10.json')
+        # Contents of `test10.json` file: { "simple_key": "simple_value" }
+
+        op.append('$', { "test_arr": [1, 2, 3] })
+        # We appended key:value pair to distinguish objects among each other.
+
+        initial = op.reset(True)
+        print(initial)
+        # Output: { "simple_key": "simple_value" }
+
+        print(op.active_json)
+        # Output: { "simple_key": "simple_value" }
+
+        # Calling this method with 'discard_active_object' set to True.
+        # makes it completely revert all changes to active object, making it
+        # equal to the initial one.
+
+        # Warning!
+        # Note: if called with 'discard_active_object' set to True, there
+        # is no way of going back. All changes will be gone for good.
+        # Please use this with extreme caution!
+        ```
+
+    -   **JsonFileParser.save_to_file(path: str = None, prettify: bool = True, create_file: bool = False)**
+        This function will save active JSON object into file.
+        _path:str_ parameter specifies path to the file. If left empty, active object will be saved into source file. _prettify:bool_ parameter enables indentations. By default it is set to True. If set to False, JSON will be compressed into one line. _create_file:bool_ parameter enables file creation. If set to True, this function will create a new file and save active object there, but obly if _path_ parameter is pointing to non-existing file. _Note: if create_file is set to True ans path is pointing to an existing file, an exception will be raised._
+
+        This function will raise a _JSONFileError_ if end file is not supporting JSON (has an unsupported extension). This function will raise a _FileExistsError_ if _create_file_ is set to True and file already exists under specified path.
+        This function will raise a _FileNotFoundError_ if _create_file_ is set to False and file could not be located under specified path. This function will raise any additional exceptions if occurred.
+
+        Examples:
+
+        Saving active object to the source file:
+
+        ```
+        from robust_json.file import JsonFileParser
+
+        op = JsonFileParser('data.json')
+        # Contents of 'data.json' file: {'name': 'Helen Anderson', 'employee_id': 107756}
+
+        op.update_value('$', 'employee_id', 107744)
+        print(op.active_json)
+        # Output: {'name': 'Helen Anderson', 'employee_id': 107744}
+
+        op.save_to_file()
+        # Contents of 'data.json' file: {'name': 'Helen Anderson', 'employee_id': 107744}
+
+        # Calling 'save_to_file' method without any arguments makes it
+        # overwrite an object in source file ('data.json' in this case)
+        # with the value of JsonFileParser.active_json property.
+        ```
+
+        Saving active object to a different file (existing):
+
+        ```
+        from robust_json.file import JsonFileParser
+
+        op = JsonFileParser('data.json')
+        # Contents of 'data.json' file: {'name': 'Helen Anderson', 'employee_id': 107756}
+
+        op.update_value('$', 'employee_id', 107744)
+        print(op.active_json)
+        # Output: {'name': 'Helen Anderson', 'employee_id': 107744}
+
+        op.save_to_file(path='new_data.json')
+        # Contents of 'new_data.json' file: {'name': 'Helen Anderson', 'employee_id': 107744}
+        # Calling this function with different 'path' parameter will
+        # make this function save the value of JsonFileParser.active_json property into
+        # existing file ('new_data.json' in this case). But if file cannot be found, a 'FileNotFoundError'
+        # exception will be raised.
+        ```
+
+        Saving active object to a different file (non-existing):
+
+        ```
+        from robust_json.file import JsonFileParser
+
+        op = JsonFileParser('data.json')
+        # Contents of 'data.json' file: {'name': 'Helen Anderson', 'employee_id': 107756}
+
+        op.update_value('$', 'employee_id', 107744)
+        print(op.active_json)
+        # Output: {'name': 'Helen Anderson', 'employee_id': 107744}
+
+        op.save_to_file(path='new_data.json')
+        # A 'FileNotFoundError' exception has been raised.
+        # It happened because this file does not exist.
+        # To fix this we need to set 'create_file' parameter to True.
+
+        op.save_to_file(path='new_data.json', create_file=True)
+        # Contents of 'new_data.json' file: {'name': 'Helen Anderson', 'employee_id': 107744}
+        # Calling the function with 'create_file' set to True and different path makes it create
+        # a new file and save the value of JsonFileParser.active_json property there.
+        # But if file already exists, a 'FileExistsError' will be raised.
+        ```
+
 ## Object module overview
+
 <div id='obj-mod'>(robust_json.object)</div>
 
 This module provides various methods for working with JSON object directly through _JsonObjectParser_ class. This class is specifically designed to work with JSON received from API calls or to be used in APIs. To access it, simply import _JsonObjectParser_ from file module:
 
     from robust_json.object import JsonObjectParser
+
 and initialize it:
 
     op = JsonObjectParser(json_obj)
-During initialization a *IncorrectFunctionParameterTypeError* exception may be raised. This means that *json* parameter has an incorrect type.
+
+_Note: JsonObjectParser now supports autosaving. If enabled, module will save active object after every change made to it and write it to specified file._
+
+To enable autosaving simply initialize this module with `autosave` parameter set to `True`:
+```
+  op = JsonObjectParser(json_object, autosave=True)
+```
+_Note: you can also specify file for autosaver. Just pass `autosave_path` parameter with path to your file during initialization, like this:_
+```
+  op = JsonObjectParser(json_object, autosave=True, autosave_path=path_to_autosave_file)
+```
+
+_If file does not exist, module will create one. If file does exist, it will be truncated and filled with serialized active object._
+
+During initialization a _IncorrectFunctionParameterTypeError_ exception may be raised. This means that _json_ parameter has an incorrect type.
 
 ### Object module methods and properties
 
-* **Properties**:
-  * **JsonObjectParser.active_json**
-    This property returns JSON object with all the recent changes.
-  * **JsonObjectParser.backup**
-    This property returns the initial JSON object, ignoring all the recent changes.
-    These two last properties may be confusing, so here is an example
-    (_Note: see corresponding documentation section for JsonObjectParser.append() function_):
-    ```
-    from robust_json.object import JsonObjectParser
+-   **Properties**:
 
-    obj = {'test_key': 'test_value'}
+    -   **JsonObjectParser.active_json**
+        This property returns JSON object with all the recent changes.
+    -   **JsonObjectParser.backup**
+        This property returns the initial JSON object, ignoring all the recent changes.
+        These two last properties may be confusing, so here is an example
+        (_Note: see corresponding documentation section for JsonObjectParser.append() function_):
 
-    op = JsonObjectParser(obj) #Class initialization
-    
+        ```
+        from robust_json.object import JsonObjectParser
 
-    op.append('$', {'append_key': 'append_value'})
-    print(op.active_json)
-    # Output: {'test_key': 'test_value', 'append_key': 'append_value'}
+        obj = {'test_key': 'test_value'}
 
-    print(op.backup)
-    # Output: {'test_key': 'test_value'}
+        op = JsonObjectParser(obj) #Class initialization
 
-    # As you can see, JsonObjectParser.backup property is equal to initial object.
-    # This is useful when there is a need to discard all changes to JSON object.
-    ```
-* **Methods**:
-  * **JsonObjectParser.get_key_value(json_path: str)**
-    This method accesses a value from specific key:value pair in JSON object and returns it.
-    _json_path:str_ parameter specifies a path to key:value pair (e.g. field0.field1.[...].fieldn).
-    Example:
-    ```
-    from robust_json.object import JsonObjectParser
 
-    obj = {'test_key': 'test_value', 'test_arr': [1, 2, 3]}
+        op.append('$', {'append_key': 'append_value'})
+        print(op.active_json)
+        # Output: {'test_key': 'test_value', 'append_key': 'append_value'}
 
-    op = JsonObjectParser(obj)
-    
+        print(op.backup)
+        # Output: {'test_key': 'test_value'}
 
-    val = op.get_key_value('test_key')
-    print(val)
-    # Output: 'test_value'
+        # As you can see, JsonObjectParser.backup property is equal to initial object.
+        # This is useful when there is a need to discard all changes to JSON object.
+        ```
 
-    # You can use this method to retrieve an element from JSON array
-    val = op.get_key_value('test_arr[1]')
-    print(val)
-    # Output: 2
-    ```
-    This function will raise an *IncorrectFunctionParameterTypeError* is its parameter has an incorrect type. This function will also raise a *JSONPathError* if specified JSON path is not valid (does not exist or could not be accessed). This function will raise any additional exceptions if occurred.
+-   **Methods**:
 
-  * **JsonObjectParser.append(json_path: str, append_value: any, append_at_end: bool = False)**
-    This method appends value to existing JSON object and returns a Python dictionary with updated contents.
-    *json_path:str* parameter specifies a path where new value will be added. To append value to the root of JSON object, *json_path* needs to be equal to '$'. *append_value:any* parameter specifies a value that will be appended. *append_at_end:bool* controls the behaviour of this function regarding JSON arrays of objects (structures like this: [{}, {}, {}, ...]) and general arrays (structures like this: [a, b, c, ...]). It has no influence on other structures. If set to False, function will try to add given value in each object of an array. If set to True, function will try to append given value at the end of an array. (see examples below). This function will return a Python dictionary with updated JSON.
+    -   **JsonObjectParser.get_key_value(json_path: str)**
+        This method accesses a value from specific key:value pair in JSON object and returns it.
+        _json_path:str_ parameter specifies a path to key:value pair (e.g. field0.field1.[...].fieldn).
+        Example:
 
-    This function will raise a *IncorrectFunctionParameterTypeEroor* exception if its parameter(-s) has(-ve) an incorrect type. This function will also raise a *ValueError* exception if 'append_value' is empty (empty string, empty array, empty dictionary). This function will raise a *JSONPathError* if provided path is not valid (does not exist or could not be accessed). This function will raise any additional exceptions if occurred.
+        ```
+        from robust_json.object import JsonObjectParser
 
-    Examples:
+        obj = {'test_key': 'test_value', 'test_arr': [1, 2, 3]}
 
-    Adding a simple key:value pair to the root of an object
-    ```
-    from robust_json.object import JsonObjectParser
+        op = JsonObjectParser(obj)
 
-    obj = {'test_key': 'test_value'}
 
-    op = JsonObjectParser(obj)
+        val = op.get_key_value('test_key')
+        print(val)
+        # Output: 'test_value'
 
-    op.append('$', {'add_key': 'add_var'})
-    print(op.active_json)
-    # Output: {'test_key': 'test_value', 'add_key': 'add_var'}
-    ```
+        # You can use this method to retrieve an element from JSON array
+        val = op.get_key_value('test_arr[1]')
+        print(val)
+        # Output: 2
+        ```
 
-    Adding new object to the array of objects
-    ```
-    from robust_json.object import JsonObjectParser
+        This function will raise an _IncorrectFunctionParameterTypeError_ is its parameter has an incorrect type. This function will also raise a _JSONPathError_ if specified JSON path is not valid (does not exist or could not be accessed). This function will raise any additional exceptions if occurred.
 
-    obj = {'users': [{'id': 1, 'name': 'Ken'}, {'id': 2, 'name': 'Alec'}]}
+    -   **JsonObjectParser.append(json_path: str, append_value: any, append_at_end: bool = False)**
+        This method appends value to existing JSON object and returns a Python dictionary with updated contents.
+        _json_path:str_ parameter specifies a path where new value will be added. To append value to the root of JSON object, _json_path_ needs to be equal to '$'. _append_value:any_ parameter specifies a value that will be appended. _append_at_end:bool_ controls the behaviour of this function regarding JSON arrays of objects (structures like this: [{}, {}, {}, ...]) and general arrays (structures like this: [a, b, c, ...]). It has no influence on other structures. If set to False, function will try to add given value in each object of an array. If set to True, function will try to append given value at the end of an array. (see examples below). This function will return a Python dictionary with updated JSON.
 
-    op = JsonObjectParser(obj)
+        This function will raise a _IncorrectFunctionParameterTypeEroor_ exception if its parameter(-s) has(-ve) an incorrect type. This function will also raise a _ValueError_ exception if 'append*value' is empty (empty string, empty array, empty dictionary). This function will raise a \_JSONPathError* if provided path is not valid (does not exist or could not be accessed). This function will raise any additional exceptions if occurred.
 
-    op.append('users', {'id': 3, 'name': 'Liza'})
-    print(op.active_json)
-    # Output: {'users': [{'id': 3, 'name': 'Lisa'}, {'id': 3, 'name': 'Lisa'}]}
+        Examples:
 
-    # This is not good!
-    # This happened because 'append_at_end' parameter is set to False.
+        Adding a simple key:value pair to the root of an object
 
-    # Function appended new object to each of the objects in the array and new values overwrote the old 
-    # ones.
+        ```
+        from robust_json.object import JsonObjectParser
 
-    # Note: we can discard these unwanted/malicious changes using JsonObjectParser.reset() function with 
-    # its parameter set to True. (please refer to corresponding section in docs)
+        obj = {'test_key': 'test_value'}
 
-    op.reset(True)
-    print(op.active_json)
-    # Output: {'users': [{'id': 1, 'name': 'Ken'}, {'id': 2, 'name': 'Alec'}]}
+        op = JsonObjectParser(obj)
 
-    # We need to set 'append_at_end' parameter to True to avoid this.
+        op.append('$', {'add_key': 'add_var'})
+        print(op.active_json)
+        # Output: {'test_key': 'test_value', 'add_key': 'add_var'}
+        ```
 
-    op.append('users', {'id': 3, 'name': 'Liza'}, True)
-    print(op.active_json)
-    # Output: {'users': [{'id': 1, 'name': 'Ken'}, {'id': 2, 'name': 'Alec'}, {'id': 3, 'name': 'Lisa'}]}
-    ```
+        Adding new object to the array of objects
 
-    Adding a key:value pair to each object of an array
-    ```
-    from robust_json.object import JsonObjectParser
+        ```
+        from robust_json.object import JsonObjectParser
 
-    obj = {'users': [{'id': 1, 'name': 'Ken'}, {'id': 2, 'name': 'Alec'}]}
+        obj = {'users': [{'id': 1, 'name': 'Ken'}, {'id': 2, 'name': 'Alec'}]}
 
-    op = JsonObjectParser(obj)
+        op = JsonObjectParser(obj)
 
-    op.append('users', {'role': 'guest'})
-    print(op.active_json)
-    # Output: {'users':[{'id':1, 'name':'Ken', 'role':'guest'}, {'id':2, 'name':'Alec', 'role':'guest'}]}
-    ```
+        op.append('users', {'id': 3, 'name': 'Liza'})
+        print(op.active_json)
+        # Output: {'users': [{'id': 3, 'name': 'Lisa'}, {'id': 3, 'name': 'Lisa'}]}
 
-    Adding new element to an array of elements:
-    ```
-    from robust_json.object import JsonObjectParser
+        # This is not good!
+        # This happened because 'append_at_end' parameter is set to False.
 
-    obj = {'colors': ['cyan', 'magenta']}
+        # Function appended new object to each of the objects in the array and new values overwrote the old
+        # ones.
 
-    op = JsonObjectParser(obj)
+        # Note: we can discard these unwanted/malicious changes using JsonObjectParser.reset() function with
+        # its parameter set to True. (please refer to corresponding section in docs)
 
-    op.append('colors', 'yellow')
-    print(op.active_json)
-    # Output: {'colors': ['cyan', 'magenta']}
+        op.reset(True)
+        print(op.active_json)
+        # Output: {'users': [{'id': 1, 'name': 'Ken'}, {'id': 2, 'name': 'Alec'}]}
 
-    # Nothing happened
-    # That's because 'append_at_end' parameter is set to False
-    # Function tried to append new string to each string and failed
-    # To fix this, we need to set 'append_at_end' parameter to True
+        # We need to set 'append_at_end' parameter to True to avoid this.
 
-    op.append('colors', 'yellow', True)
-    print(op.active_json)
-    # Output: {'colors': ['cyan', 'magenta', 'yellow']}
-    ```
-  * **JsonObjectParser.update_value(json_path: str, key_or_index: Union[str, int], new_value: any, strict_mode: bool = False)**
-    <div id='obj-upd'></div>
+        op.append('users', {'id': 3, 'name': 'Liza'}, True)
+        print(op.active_json)
+        # Output: {'users': [{'id': 1, 'name': 'Ken'}, {'id': 2, 'name': 'Alec'}, {'id': 3, 'name': 'Lisa'}]}
+        ```
 
-    This function will updaate value in key:value pair and return a Python dictionary with updated contents. 
-    *json_path:str* parameter specifies a path to key:value pair/array/etc. parent that needs to be updated. (To update value in the root of JSON object, *json_path* needs to be equal to '$') while *key_or_index:Union[str, int]* parameter specifies key (if it's an object) or array index (if it's an array). This implies that if we need to update key with path 'field0.field1.upd_key', then *json_path* will be equal to 'field0.field1' and *key_or_index* parameter will be equal to 'upd_key'. *Note: if you use an array index while 'json_path' parameter is pointing to JSON object, or if you use a property name while 'json_path' is pointing to JSON array, an exception will be raised* (See examples below). *new_value:any* specifies value that will overwrite the old one and *strict_mode:bool* enables Strict Mode. By default this mode is turned off. If turned on, this method will ensure that new value has the same type as the old one (if old value is a string, then the new one also needs to be a string, etc.). If types are not matching, an exception will be raised.
-
-    This function will raise an *IncorrectFunctionParameterTypeError* exception is its parameter(-s) has(-ve) an incorrect type. This function will also raise a *JSONStrictModeError* in case of mismatched types if Strict Mode is enabled and a *JSONPathError* exception if JSON path is not valid (doesn't exist or could not be accessed). This function will raise any additional exceptions if occurred.
+        Adding a key:value pair to each object of an array
 
-    Examples:
+        ```
+        from robust_json.object import JsonObjectParser
 
-    Updating key:value pair in root of the object:
-    ```
-    from robust_json.object import JsonObjectParser
+        obj = {'users': [{'id': 1, 'name': 'Ken'}, {'id': 2, 'name': 'Alec'}]}
 
-    op = JsonObjectParser({'app_name': 'HomeCare', 'version', '1.0.0'})
+        op = JsonObjectParser(obj)
 
-    op.update_value('$', 'version': '1.0.5')
-    print(op.active_json)
-    # Output: {'app_name': 'HomeCare', 'version': '1.0.5'}
-    ```
+        op.append('users', {'role': 'guest'})
+        print(op.active_json)
+        # Output: {'users':[{'id':1, 'name':'Ken', 'role':'guest'}, {'id':2, 'name':'Alec', 'role':'guest'}]}
+        ```
 
-    Updating item in an array:
-    ```
-    from robust_json.object import JsonObjectParser
+        Adding new element to an array of elements:
 
-    op = JsonObjectParser({'app_name': 'HomeCare', 'authors': ['Alec Hammer', 'Nick Rogers']})
+        ```
+        from robust_json.object import JsonObjectParser
 
-    op.update_value('authors', 1, 'Nick Rogerson')
-    print(op.active_json)
-    # Output: {'app_name': 'HomeCare', 'authors': ['Alec Hammer', 'Nick Rogerson']}
-    ```
-    ```
-    # Note: if you don't know the index of an item, you can use 'get_item_index()' 
-    # function from 'robust_json.ext' module to get it. (See corresponding section in the docs)
+        obj = {'colors': ['cyan', 'magenta']}
 
-    from robust_json.object import JsonObjectParser
-    import robust_json.ext as ext
+        op = JsonObjectParser(obj)
 
-    op = JsonObjectParser({'app_name': 'HomeCare', 'authors': ['Alec Hammer', 'Nick Rogers']})
+        op.append('colors', 'yellow')
+        print(op.active_json)
+        # Output: {'colors': ['cyan', 'magenta']}
 
-    # Getting an array for future use
-    authors_array = op.get_key_value('authors')
-    print(authors_array)
-    # Output: ['Alec Hammer', 'Nick Rogers']
+        # Nothing happened
+        # That's because 'append_at_end' parameter is set to False
+        # Function tried to append new string to each string and failed
+        # To fix this, we need to set 'append_at_end' parameter to True
 
-    # Finding the index
-    index = ext.get_item_index('Alec Hammer', authors_array, False)
-    print(index)
-    # Output: 0
+        op.append('colors', 'yellow', True)
+        print(op.active_json)
+        # Output: {'colors': ['cyan', 'magenta', 'yellow']}
+        ```
 
-    #Updating value
-    op.update_value('authors', index, 'Alain Hammer')
-    print(op.active_json)
-    # Output: {'app_name': 'HomeCare', 'authors': ['Alain Hammer', 'Nick Rogers']}
-    ```
-    Updating value with Strict Mode:
-    ```
-    from robust_json.object import JsonObjectParser
+    -   **JsonObjectParser.update_value(json_path: str, key_or_index: Union[str, int], new_value: any, strict_mode: bool = False)**
+        <div id='obj-upd'></div>
 
-    op = JsonObjectParser({'app_name': 'HomeCare', 'app_id': 1077})
+        This function will updaate value in key:value pair and return a Python dictionary with updated contents.
+        _json_path:str_ parameter specifies a path to key:value pair/array/etc. parent that needs to be updated. (To update value in the root of JSON object, _json_path_ needs to be equal to '$') while _key_or_index:Union[str, int]_ parameter specifies key (if it's an object) or array index (if it's an array). This implies that if we need to update key with path 'field0.field1.upd*key', then \_json_path* will be equal to 'field0.field1' and _key_or_index_ parameter will be equal to 'upd*key'. \_Note: if you use an array index while 'json_path' parameter is pointing to JSON object, or if you use a property name while 'json_path' is pointing to JSON array, an exception will be raised* (See examples below). _new_value:any_ specifies value that will overwrite the old one and _strict_mode:bool_ enables Strict Mode. By default this mode is turned off. If turned on, this method will ensure that new value has the same type as the old one (if old value is a string, then the new one also needs to be a string, etc.). If types are not matching, an exception will be raised.
 
-    op.update_value('$', 'app_id', 'this is a string', True)
-    # An 'StrictModeError' was raised
-    # This happened because new value has a different type
-    # Let's try again, but with integer
+        This function will raise an _IncorrectFunctionParameterTypeError_ exception is its parameter(-s) has(-ve) an incorrect type. This function will also raise a _JSONStrictModeError_ in case of mismatched types if Strict Mode is enabled and a _JSONPathError_ exception if JSON path is not valid (doesn't exist or could not be accessed). This function will raise any additional exceptions if occurred.
 
-    op.update_value('$', 'app_id', 1080, True)
-    print(op.active_json)
-    # Output: {'app_name': 'HomeCare', 'app_id': 1080}
-    ```
+        Examples:
 
-  * **JsonObjectParser.delete(json_path: str, key_or_index: Union[str, int])**
-    This function will delete an element from JSON and return a Python dictionary with updated contents.
-    *json_path:str* parameter specifies a path to key:value pair/array/etc. parent that needs to be deleted. (To delete value in the root of JSON object, *json_path* needs to be equal to '$') while *key_or_index:Union[str, int]* parameter specifies key (if it's an object) or array index (if it's an array). This implies that if we need to delete key with path 'field0.field1.del_key', then *json_path* will be equal to 'field0.field1' and *key_or_index* parameter will be equal to 'del_key'. *Note: if you use an array index while 'json_path' parameter is pointing to JSON object, or if you use a property name while 'json_path' is pointing to JSON array, an exception will be raised* (See examples below).
-    This function will raise an *IncorrectFunctionParameterTypeError* exception is its parameter(-s) has(-ve) an incorrect type. This function will also raise a *JSONPathError* exception if JSON path is not valid (doesn't exist or could not be accessed). This function will raise any additional exceptions if occurred.
+        Updating key:value pair in root of the object:
 
-    Examples:
+        ```
+        from robust_json.object import JsonObjectParser
 
-    Deleting key:value pair in root of the object:
-    ```
-    from robust_json.object import JsonObjectParser
+        op = JsonObjectParser({'app_name': 'HomeCare', 'version', '1.0.0'})
 
-    obj = {'test_key': 'test_val', 'del_key': 'del_val'}
+        op.update_value('$', 'version': '1.0.5')
+        print(op.active_json)
+        # Output: {'app_name': 'HomeCare', 'version': '1.0.5'}
+        ```
 
-    op = JsonObjectParser(obj)
-    
+        Updating item in an array:
 
-    op.delete('$', 'del_key')
-    print(op.active_json)
-    # Output: {'test_key': 'test_val'}
-    ```
-    Deleting item in an array:
-    ```
-    from robust_json.object import JsonObjectParser
+        ```
+        from robust_json.object import JsonObjectParser
 
-    op = JsonObjectParser('test8.json')
-    # Contents of 'test6.json' file: {'app_name': 'PetShopify', 'authors': ['Alec Hammer', 'Nick Rogers']}
+        op = JsonObjectParser({'app_name': 'HomeCare', 'authors': ['Alec Hammer', 'Nick Rogers']})
 
-    op.delete('authors', 1)
-    print(op.active_json)
-    # Output: {'app_name': 'PetShopify', 'authors': ['Alec Hammer']}
-    ```
-    ```
-    # Note: if you don't know the index of an item, you can use 'get_item_index()' 
-    # function from 'robust_json.ext' module to get it. (See corresponding section in the docs)
+        op.update_value('authors', 1, 'Nick Rogerson')
+        print(op.active_json)
+        # Output: {'app_name': 'HomeCare', 'authors': ['Alec Hammer', 'Nick Rogerson']}
+        ```
 
-    from robust_json.object import JsonObjectParser
-    import robust_json.ext as ext
+        ```
+        # Note: if you don't know the index of an item, you can use 'get_item_index()'
+        # function from 'robust_json.ext' module to get it. (See corresponding section in the docs)
 
-    obj = {'app_name': 'PetShopify', 'authors': ['Alec Hammer', 'Nick Rogers']}
+        from robust_json.object import JsonObjectParser
+        import robust_json.ext as ext
 
-    op = JsonObjectParser(obj)
+        op = JsonObjectParser({'app_name': 'HomeCare', 'authors': ['Alec Hammer', 'Nick Rogers']})
 
+        # Getting an array for future use
+        authors_array = op.get_key_value('authors')
+        print(authors_array)
+        # Output: ['Alec Hammer', 'Nick Rogers']
 
-    # Getting an array for future use
-    authors_array = op.get_key_value('authors')
-    print(authors_array)
-    # Output: ['Alec Hammer', 'Nick Rogers']
+        # Finding the index
+        index = ext.get_item_index('Alec Hammer', authors_array, False)
+        print(index)
+        # Output: 0
 
-    # Finding the index
-    index = ext.get_item_index('Alec Hammer', authors_array, False)
-    print(index)
-    # Output: 0
+        #Updating value
+        op.update_value('authors', index, 'Alain Hammer')
+        print(op.active_json)
+        # Output: {'app_name': 'HomeCare', 'authors': ['Alain Hammer', 'Nick Rogers']}
+        ```
 
-    #Updating value
-    op.delete('authors', index)
-    print(op.active_json)
-    # Output: {'app_name': 'HomeCare', 'authors': ['Nick Rogers']}
-    ```
+        Updating value with Strict Mode:
 
-  * **JsonObjectParser.reset(discard_active_object: bool = False)**
-    This function will reset active JSON object, removing any changes made to it.
-    *discard_active_object:bool* parameter controls the behaviour of this function regarding the active JSON object (JsonObjectParser.active_json property). If set to False, this method will simply return an initial object and keep all the changes to the actove JSON. If set to True, this function will still return the initial object, but will also reset the active one, and all changes will be gone for good.
+        ```
+        from robust_json.object import JsonObjectParser
 
-    This function will raise an *IncorrectFunctionParameterTypeError* if its parameter has an incorrect type. This function will raise any additional exceptions if occurred.
+        op = JsonObjectParser({'app_name': 'HomeCare', 'app_id': 1077})
 
-    Examples:
+        op.update_value('$', 'app_id', 'this is a string', True)
+        # An 'StrictModeError' was raised
+        # This happened because new value has a different type
+        # Let's try again, but with integer
 
-    Getting an intial object and storing it in a variable:
+        op.update_value('$', 'app_id', 1080, True)
+        print(op.active_json)
+        # Output: {'app_name': 'HomeCare', 'app_id': 1080}
+        ```
 
-    ```
-    from robust_json.object import JsonObjectParser
+    -   **JsonObjectParser.delete(json_path: str, key_or_index: Union[str, int])**
+        This function will delete an element from JSON and return a Python dictionary with updated contents.
+        _json_path:str_ parameter specifies a path to key:value pair/array/etc. parent that needs to be deleted. (To delete value in the root of JSON object, _json_path_ needs to be equal to '$') while _key_or_index:Union[str, int]_ parameter specifies key (if it's an object) or array index (if it's an array). This implies that if we need to delete key with path 'field0.field1.del*key', then \_json_path* will be equal to 'field0.field1' and _key_or_index_ parameter will be equal to 'del*key'. \_Note: if you use an array index while 'json_path' parameter is pointing to JSON object, or if you use a property name while 'json_path' is pointing to JSON array, an exception will be raised* (See examples below).
+        This function will raise an _IncorrectFunctionParameterTypeError_ exception is its parameter(-s) has(-ve) an incorrect type. This function will also raise a _JSONPathError_ exception if JSON path is not valid (doesn't exist or could not be accessed). This function will raise any additional exceptions if occurred.
 
-    obj = { "simple_key": "simple_value" }
+        Examples:
 
-    op = JsonObjectParser(obj)
+        Deleting key:value pair in root of the object:
 
-    op.append('$', { "test_arr": [1, 2, 3] })
-    # We appended key:value pair to distinguish objects among each other
+        ```
+        from robust_json.object import JsonObjectParser
 
-    initial = op.reset()
-    print(initial)
-    # initial = { "simple_key": "simple_value" }
+        obj = {'test_key': 'test_val', 'del_key': 'del_val'}
 
-    print(op.active_json)
-    # Output: { "simple_key": "simple_value", "test_arr": [1, 2, 3] }
-    # Calling this method without parameters simply makes it return initial
-    # object, saving the active one for future use
-    ```
+        op = JsonObjectParser(obj)
 
-    Getting an initial object and resetting an active one:
 
-    ```
-    from robust_json.object import JsonObjectParser
+        op.delete('$', 'del_key')
+        print(op.active_json)
+        # Output: {'test_key': 'test_val'}
+        ```
 
-    obj = { "simple_key": "simple_value" }
+        Deleting item in an array:
 
-    op = JsonObjectParser(obj)
+        ```
+        from robust_json.object import JsonObjectParser
 
-    op.append('$', { "test_arr": [1, 2, 3] })
-    # We appended key:value pair to distinguish objects among each other
+        op = JsonObjectParser('test8.json')
+        # Contents of 'test6.json' file: {'app_name': 'PetShopify', 'authors': ['Alec Hammer', 'Nick Rogers']}
 
-    initial = op.reset(True)
-    print(initial)
-    # Output: { "simple_key": "simple_value" }
+        op.delete('authors', 1)
+        print(op.active_json)
+        # Output: {'app_name': 'PetShopify', 'authors': ['Alec Hammer']}
+        ```
 
-    print(op.active_json)
-    # Output: { "simple_key": "simple_value" }
+        ```
+        # Note: if you don't know the index of an item, you can use 'get_item_index()'
+        # function from 'robust_json.ext' module to get it. (See corresponding section in the docs)
 
-    # Calling this method with 'discard_active_object' set to True
-    # makes it completely revert all changes to active object, making it
-    # equal to the initial one.
+        from robust_json.object import JsonObjectParser
+        import robust_json.ext as ext
 
-    # Warning!
-    # Note: if called with 'discard_active_object' set to True, there
-    # is no way of going back. All changes will be gone for good.
-    # Please use this with extreme caution!
-    ```
-  * **JsonObjectParser.save_to_file(path: str, prettify: bool = True, create_file: bool = False)**
-    This function will save active JSON object into file.
-    *path:str* parameter specifies path to the file. *prettify:bool* parameter enables indentations. By default it is set to True. If set to False, JSON will be compressed into one line. *create_file:bool* parameter enables file creation. If set to True, this function will create a new file and save active object there, but obly if *path* parameter is pointing to non-existing file. *Note: if create_file is set to True ans path is pointing to an existing file, an exception will be raised.*
+        obj = {'app_name': 'PetShopify', 'authors': ['Alec Hammer', 'Nick Rogers']}
 
-    This function will raise a *JSONFileError* if end file is not supporting JSON (has an unsupported extension). This function will raise a *FileExistsError* if *cheate_file* is set to True and file already exists under specified path.
-    This function will raise a *FileNotFoundError* if *create_file* is set to False and file could not be located under specified path. This function will raise any additional exceptions if occurred.
+        op = JsonObjectParser(obj)
 
-    Examples:
 
-    Saving active object to a file (existing):
-    ```
-    from robust_json.object import JsonObjectParser
+        # Getting an array for future use
+        authors_array = op.get_key_value('authors')
+        print(authors_array)
+        # Output: ['Alec Hammer', 'Nick Rogers']
 
-    obj = {'name': 'Helen Anderson', 'employee_id': 107756}
+        # Finding the index
+        index = ext.get_item_index('Alec Hammer', authors_array, False)
+        print(index)
+        # Output: 0
 
-    op = JsonObjectParser(obj)
+        #Updating value
+        op.delete('authors', index)
+        print(op.active_json)
+        # Output: {'app_name': 'HomeCare', 'authors': ['Nick Rogers']}
+        ```
 
-    op.update_value('$', 'employee_id', 107744)
-    print(op.active_json)
-    # Output: {'name': 'Helen Anderson', 'employee_id': 107744}
+    -   **JsonObjectParser.reset(discard_active_object: bool = False)**
+        This function will reset active JSON object, removing any changes made to it.
+        _discard_active_object:bool_ parameter controls the behaviour of this function regarding the active JSON object (JsonObjectParser.active_json property). If set to False, this method will simply return an initial object and keep all the changes to the actove JSON. If set to True, this function will still return the initial object, but will also reset the active one, and all changes will be gone for good.
 
-    op.save_to_file(path='new_data.json')
-    # Contents of 'new_data.json' file: {'name': 'Helen Anderson', 'employee_id': 107744}
-    # Calling this function with different 'path' parameter will 
-    # make this function save the value of JsonObjectParser.active_json property into
-    # existing file ('new_data.json' in this case). But if file cannot be found, a 'FileNotFoundError' 
-    # exception will be raised.
-    ```
-    Saving active object to a file (non-existing):
-    ```
-    from robust_json.object import JsonObjectParser
+        This function will raise an _IncorrectFunctionParameterTypeError_ if its parameter has an incorrect type. This function will raise any additional exceptions if occurred.
 
-    obj = {'name': 'Helen Anderson', 'employee_id': 107756}
+        Examples:
 
-    op = JsonObjectParser(obj)
-    
+        Getting an intial object and storing it in a variable:
 
-    op.update_value('$', 'employee_id', 107744)
-    print(op.active_json)
-    # Output: {'name': 'Helen Anderson', 'employee_id': 107744}
+        ```
+        from robust_json.object import JsonObjectParser
 
-    op.save_to_file(path='new_data.json')
-    # A 'FileNotFoundError' exception has been raised.
-    # It happened because this file does not exist.
-    # To fix this we need to set 'create_file' parameter to True.
+        obj = { "simple_key": "simple_value" }
 
-    op.save_to_file(path='new_data.json', create_file=True)
-    # Contents of 'new_data.json' file: {'name': 'Helen Anderson', 'employee_id': 107744}
-    # Calling the function with 'create_file' set to True and different path makes it create 
-    # a new file and save the value of JsonObjectParser.active_json property there.
-    # But if file already exists, a 'FileExistsError' will be raised.
-    ```
+        op = JsonObjectParser(obj)
+
+        op.append('$', { "test_arr": [1, 2, 3] })
+        # We appended key:value pair to distinguish objects among each other
+
+        initial = op.reset()
+        print(initial)
+        # initial = { "simple_key": "simple_value" }
+
+        print(op.active_json)
+        # Output: { "simple_key": "simple_value", "test_arr": [1, 2, 3] }
+        # Calling this method without parameters simply makes it return initial
+        # object, saving the active one for future use
+        ```
+
+        Getting an initial object and resetting an active one:
+
+        ```
+        from robust_json.object import JsonObjectParser
+
+        obj = { "simple_key": "simple_value" }
+
+        op = JsonObjectParser(obj)
+
+        op.append('$', { "test_arr": [1, 2, 3] })
+        # We appended key:value pair to distinguish objects among each other
+
+        initial = op.reset(True)
+        print(initial)
+        # Output: { "simple_key": "simple_value" }
+
+        print(op.active_json)
+        # Output: { "simple_key": "simple_value" }
+
+        # Calling this method with 'discard_active_object' set to True
+        # makes it completely revert all changes to active object, making it
+        # equal to the initial one.
+
+        # Warning!
+        # Note: if called with 'discard_active_object' set to True, there
+        # is no way of going back. All changes will be gone for good.
+        # Please use this with extreme caution!
+        ```
+
+    -   **JsonObjectParser.save_to_file(path: str, prettify: bool = True, create_file: bool = False)**
+        This function will save active JSON object into file.
+        _path:str_ parameter specifies path to the file. _prettify:bool_ parameter enables indentations. By default it is set to True. If set to False, JSON will be compressed into one line. _create_file:bool_ parameter enables file creation. If set to True, this function will create a new file and save active object there, but obly if _path_ parameter is pointing to non-existing file. _Note: if create_file is set to True ans path is pointing to an existing file, an exception will be raised._
+
+        This function will raise a _JSONFileError_ if end file is not supporting JSON (has an unsupported extension). This function will raise a _FileExistsError_ if _cheate_file_ is set to True and file already exists under specified path.
+        This function will raise a _FileNotFoundError_ if _create_file_ is set to False and file could not be located under specified path. This function will raise any additional exceptions if occurred.
+
+        Examples:
+
+        Saving active object to a file (existing):
+
+        ```
+        from robust_json.object import JsonObjectParser
+
+        obj = {'name': 'Helen Anderson', 'employee_id': 107756}
+
+        op = JsonObjectParser(obj)
+
+        op.update_value('$', 'employee_id', 107744)
+        print(op.active_json)
+        # Output: {'name': 'Helen Anderson', 'employee_id': 107744}
+
+        op.save_to_file(path='new_data.json')
+        # Contents of 'new_data.json' file: {'name': 'Helen Anderson', 'employee_id': 107744}
+        # Calling this function with different 'path' parameter will
+        # make this function save the value of JsonObjectParser.active_json property into
+        # existing file ('new_data.json' in this case). But if file cannot be found, a 'FileNotFoundError'
+        # exception will be raised.
+        ```
+
+        Saving active object to a file (non-existing):
+
+        ```
+        from robust_json.object import JsonObjectParser
+
+        obj = {'name': 'Helen Anderson', 'employee_id': 107756}
+
+        op = JsonObjectParser(obj)
+
+
+        op.update_value('$', 'employee_id', 107744)
+        print(op.active_json)
+        # Output: {'name': 'Helen Anderson', 'employee_id': 107744}
+
+        op.save_to_file(path='new_data.json')
+        # A 'FileNotFoundError' exception has been raised.
+        # It happened because this file does not exist.
+        # To fix this we need to set 'create_file' parameter to True.
+
+        op.save_to_file(path='new_data.json', create_file=True)
+        # Contents of 'new_data.json' file: {'name': 'Helen Anderson', 'employee_id': 107744}
+        # Calling the function with 'create_file' set to True and different path makes it create
+        # a new file and save the value of JsonObjectParser.active_json property there.
+        # But if file already exists, a 'FileExistsError' will be raised.
+        ```
+
 ## Errors module overview
+
 <div id='err-mod'></div>
 
-This module contains all custom exceptions that can be raised during package runtime. There are a total of 5: *JSONFileError*, *JSONPathError*, *JSONStrictModeError*, *JSONObjectError*, *IncorrectFunctionParameterTypeError*. If you need to import them, it can be done like this:
+This module contains all custom exceptions that can be raised during package runtime. There are a total of 5: _JSONFileError_, _JSONPathError_, _JSONStrictModeError_, _JSONObjectError_, _IncorrectFunctionParameterTypeError_. If you need to import them, it can be done like this:
+
 ```
 import robust_json.errors as json_err
 ```
+
 ### **Exceptions**
-* **JSONFileError**
+
+-   **JSONFileError**
     This exception indicates that there is an error with JSON file (it has an unsupported extension, cannot be processed, etc.)
-* **JSONPathError**
+-   **JSONPathError**
     This exception indicates that JSON path (field0.field1.[...].fieldn) is not valid (cannot be accessed or doesn't exist in the object)
-* **JSONStrictModeError**
-    This exception can be raised only by [*JsonFileParser.update_value()*](#file-upd) and [*JsonObjectParser.update_value()*](#obj-upd) methods because only these function support Strict Mode at the moment. This exception indicates that there is a type mismatch during update. For further information, you can see the examples of the above mentionned functions in their corresponding sections to see how this works.
-* **JSONObjectError**
+-   **JSONStrictModeError**
+    This exception can be raised only by [_JsonFileParser.update_value()_](#file-upd) and [_JsonObjectParser.update_value()_](#obj-upd) methods because only these function support Strict Mode at the moment. This exception indicates that there is a type mismatch during update. For further information, you can see the examples of the above mentionned functions in their corresponding sections to see how this works.
+-   **JSONObjectError**
     This exception indicates that JSON object is not valid (has incorrect format, syntax errors, etc.)
-* **IncorrectFunctionParameterTypeError**
+-   **IncorrectFunctionParameterTypeError**
     This exception indicates that one or more of function's parameters has incorrect type.
 
 ## Extension module overview
+
 <div id='ext-mod'></div>
 This module provides some useful methods that can reduce development time.
 
 ### **Methods**
-* **filter_json_array(json_array: list, field: string, value: any)**
-    This function will filter given array of JSON objects and return it. 
-    *json_array:list* parameter specifies the list that neesd to be filtered, *field:str* specifies the key and *value:any* specifies the value. Two last parameters form a key:value pair which takes a role of a filter.
+
+-   **filter_json_array(json_array: list, field: string, value: any)**
+    This function will filter given array of JSON objects and return it.
+    _json_array:list_ parameter specifies the list that neesd to be filtered, _field:str_ specifies the key and _value:any_ specifies the value. Two last parameters form a key:value pair which takes a role of a filter.
 
     This function will return a list with filtered content.
 
-    This function will raise an *IncorrectFunctionParameterTypeError* exception if one or more of its parameter has an incorrect type. This function will raise a *JSONObjectError* if *json_arr* is not an array of objects ([{}, {}, {}, ...]). This function will raise any additional exceptions if occurred.
+    This function will raise an _IncorrectFunctionParameterTypeError_ exception if one or more of its parameter has an incorrect type. This function will raise a _JSONObjectError_ if _json_arr_ is not an array of objects ([{}, {}, {}, ...]). This function will raise any additional exceptions if occurred.
 
     Example:
     Filtering an array of objects by a specific key:value pair
+
     ```
     from robust_json.ext import filter_json_array
 
@@ -875,9 +972,10 @@ This module provides some useful methods that can reduce development time.
     print(usa_orders)
     # Output: [{"order_id":1648,"country":"USA" }, {"order_id":6703,"country":"USA"}]
     ```
-* **get_item_index(item: any, array: list, always_array: bool = False)**
+
+-   **get_item_index(item: any, array: list, always_array: bool = False)**
     This function will find an intem in given array and return its index(-es).
-    *item:any* specifies item which index needs to be found. *array:list* specifies array where this item needs to be present and *always_array:bool* controls the return type of this function. If set to False, this function will return an array if there is multiple matches, but will return an integer if there is only one match. If set to True, this function will always return an array (see examples below).
+    _item:any_ specifies item which index needs to be found. _array:list_ specifies array where this item needs to be present and _always_array:bool_ controls the return type of this function. If set to False, this function will return an array if there is multiple matches, but will return an integer if there is only one match. If set to True, this function will always return an array (see examples below).
 
     Examples:
 
@@ -894,36 +992,38 @@ This module provides some useful methods that can reduce development time.
     index = get_item_index(10, arr2, True)
     print(index)
     # Output: [2]
-    # Note: we set 'always_array' parameter to True, therefore function returned an array even if there 
+    # Note: we set 'always_array' parameter to True, therefore function returned an array even if there
     # is only one match. This is useful when this array will be iterated later on.
 
     arr3 = [1, 6, 'string', 8, 5, 4, 'string', 0, 22]
     index = get_item_index('string', arr3, False)
-    # Note: even if 'alway_array' parameter set to False, this function will return an array of 
+    # Note: even if 'alway_array' parameter set to False, this function will return an array of
     # integers because there are multiple matches
     print(index)
     # Output: [2, 6]
 
     arr4 = [1, 2, 3]
     index = get_item_index(6, arr4, False)
-    # Note: if item is not present in the array and 'always_array' parameter set to False, 
+    # Note: if item is not present in the array and 'always_array' parameter set to False,
     # None will be returned.
     print(index)
     # Output: None
 
     arr5 = [5, 6, 7]
     index = get_item_index(10, arr5, True)
-    # Note: if item is not present in the array and 'always_array' parameter set to True, 
+    # Note: if item is not present in the array and 'always_array' parameter set to True,
     # an empty array will be returned.
     print(index)
     # Output: []
     ```
-* **reverse_array(array: list)**
+
+-   **reverse_array(array: list)**
     This function will reverse an array and return it.
 
-    This function will raise an *IncorrectFunctionParameterTypeError* if its parameter has an incorrect type. This function will raise any additional exceptions if occurred.
+    This function will raise an _IncorrectFunctionParameterTypeError_ if its parameter has an incorrect type. This function will raise any additional exceptions if occurred.
 
     Example:
+
     ```
     from robust_json.ext import reverse_array
 
@@ -932,6 +1032,3 @@ This module provides some useful methods that can reduce development time.
     print(rev_arr)
     # Output: ['c', 'b', 'a']
     ```
-
-
-
