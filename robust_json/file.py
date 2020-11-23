@@ -18,6 +18,7 @@
 
 # JSON modules import
 import json as JSON
+import os
 import jsonpath_ng.ext as jsonpath
 
 # Misc import
@@ -41,18 +42,18 @@ class JsonFileParser:
     https://github.com/NickolaiBeloguzov/robust-json/blob/master/README.md#file-module-overview
     """
 
-    def __init__(self, path):
+    def __init__(self, path, autosave: bool = False, **kwargs):
         self.__path = path
         self.__file_formats = [".json", ".txt"]
         self.__service = service()
+        self.__is_autosaving = autosave
+        self.__kwargs = kwargs
 
         if self.__service.check_file(self.__path, self.__file_formats):
             self.active_json = self.get_json_from_file()
             self.__backup = self.get_json_from_file()
         else:
-            raise JSONFileError(
-                f"Error parsing file `{self.path}`. Its content cannot be parsed."
-            )
+            raise JSONFileError(f"Error parsing file `{self.path}`. Its content cannot be parsed.")
 
     @property
     def file_formats(self):
@@ -136,9 +137,7 @@ class JsonFileParser:
 
         # Checkint parameter type
         if type(json_path) != str:
-            raise IncorrectFunctionParameterTypeError(
-                "json_path", "str", type(json_path).__name__
-            )
+            raise IncorrectFunctionParameterTypeError("json_path", "str", type(json_path).__name__)
 
         json_content = self.active_json
 
@@ -156,9 +155,7 @@ class JsonFileParser:
             return res[0]
         return res
 
-    def append(
-        self, json_path: str, append_value: Any, append_at_end: bool = False
-    ) -> dict:
+    def append(self, json_path: str, append_value: Any, append_at_end: bool = False) -> dict:
         """
         Append new value to an existing JSON object.
 
@@ -232,9 +229,7 @@ class JsonFileParser:
         """
 
         if type(json_path) != str:
-            raise IncorrectFunctionParameterTypeError(
-                "json_path", "str", type(json_path).__name__
-            )
+            raise IncorrectFunctionParameterTypeError("json_path", "str", type(json_path).__name__)
 
         if type(append_at_end) != bool:
             raise IncorrectFunctionParameterTypeError(
@@ -275,6 +270,21 @@ class JsonFileParser:
                     return json_content
             temp.update(append_value)
             self.active_json = json_content
+            if self.__is_autosaving:
+                if "autosave_path" in self.__kwargs:
+                    if type(self.__kwargs["autosave_path"]) != str:
+                        raise IncorrectFunctionParameterTypeError(
+                            "autosave_path", "str", type(self.__kwargs["autosave_path"]).__name__
+                        )
+                    path = self.__kwargs["autosave_path"]
+                    if not os.path.exists(path):
+                        create_file = True
+                    else:
+                        create_file = False
+                else:
+                    path = self.__path
+                    create_file = False
+                self.save_to_file(path=path, create_file=create_file)
             return json_content
 
     def update_value(
@@ -365,9 +375,7 @@ class JsonFileParser:
         # TODO Add link to an appropriate README section from GitHub
 
         if type(json_path) != str:
-            raise IncorrectFunctionParameterTypeError(
-                "json_path", "str", type(json_path).__name__
-            )
+            raise IncorrectFunctionParameterTypeError("json_path", "str", type(json_path).__name__)
 
         if type(strict_mode) != bool:
             raise IncorrectFunctionParameterTypeError(
@@ -413,6 +421,23 @@ class JsonFileParser:
                         )
                 temp.update({key_or_index: new_value})
                 self.active_json = json_content
+                if self.__is_autosaving:
+                    if "autosave_path" in self.__kwargs:
+                        if type(self.__kwargs["autosave_path"]) != str:
+                            raise IncorrectFunctionParameterTypeError(
+                                "autosave_path",
+                                "str",
+                                type(self.__kwargs["autosave_path"]).__name__,
+                            )
+                        path = self.__kwargs["autosave_path"]
+                        if not os.path.exists(path):
+                            create_file = True
+                        else:
+                            create_file = False
+                    else:
+                        path = self.__path
+                        create_file = False
+                    self.save_to_file(path=path, create_file=create_file)
                 return json_content
 
     def delete(self, json_path: str, key_or_index: Union[str, int]) -> dict:
@@ -483,9 +508,7 @@ class JsonFileParser:
         # TODO Add link to an appropriate README section from GitHub
 
         if type(json_path) != str:
-            raise IncorrectFunctionParameterTypeError(
-                "json_path", "str", type(json_path).__name__
-            )
+            raise IncorrectFunctionParameterTypeError("json_path", "str", type(json_path).__name__)
 
         if type(key_or_index) not in [str, int]:
             raise IncorrectFunctionParameterTypeError(
@@ -516,6 +539,23 @@ class JsonFileParser:
                     )
                 del temp[key_or_index]
                 self.active_json = json_content
+                if self.__is_autosaving:
+                    if "autosave_path" in self.__kwargs:
+                        if type(self.__kwargs["autosave_path"]) != str:
+                            raise IncorrectFunctionParameterTypeError(
+                                "autosave_path",
+                                "str",
+                                type(self.__kwargs["autosave_path"]).__name__,
+                            )
+                        path = self.__kwargs["autosave_path"]
+                        if not os.path.exists(path):
+                            create_file = True
+                        else:
+                            create_file = False
+                    else:
+                        path = self.__path
+                        create_file = False
+                    self.save_to_file(path=path, create_file=create_file)
                 return json_content
 
     def minify(self) -> None:
@@ -551,9 +591,7 @@ class JsonFileParser:
         """
 
         if type(indent) != int and indent != None:
-            raise IncorrectFunctionParameterTypeError(
-                "indent", "int", type(indent).__name__
-            )
+            raise IncorrectFunctionParameterTypeError("indent", "int", type(indent).__name__)
 
         if indent == 0 or indent == None:
             self.minify()
@@ -569,6 +607,7 @@ class JsonFileParser:
         file.close()
 
     def reset(self, discard_active_object: bool = False) -> dict:
+        # ? Do we need autosaving feature here?
         """
         Discard changes to JSON.
 
@@ -700,14 +739,10 @@ class JsonFileParser:
         """
 
         if type(path) != str and path != None:
-            raise IncorrectFunctionParameterTypeError(
-                "path", "str", type(path).__name__
-            )
+            raise IncorrectFunctionParameterTypeError("path", "str", type(path).__name__)
 
         if type(prettify) != bool:
-            raise IncorrectFunctionParameterTypeError(
-                "prettify", "bool", type(prettify).__name__
-            )
+            raise IncorrectFunctionParameterTypeError("prettify", "bool", type(prettify).__name__)
 
         if type(create_file) != bool:
             raise IncorrectFunctionParameterTypeError(

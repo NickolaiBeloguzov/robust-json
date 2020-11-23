@@ -18,6 +18,7 @@
 
 # JSON modules import
 import json as JSON
+import os
 import jsonpath_ng.ext as jsonpath
 
 # Misc import
@@ -41,15 +42,34 @@ class JsonObjectParser:
     https://github.com/NickolaiBeloguzov/robust-json/blob/master/README.md#object-module-overview
     """
 
-    def __init__(self, json: dict):
+    def __init__(self, json: dict, autosave: bool = False, autosave_path: str = None):
 
         if type(json) != dict:
             raise IncorrectFunctionParameterTypeError(
                 "json", "dict", type(json).__name__
             )
 
+        if type(autosave) != bool:
+            raise IncorrectFunctionParameterTypeError(
+                "autosave", "str", type(autosave).__name__
+            )
+
+        if autosave and type(autosave_path) != str:
+            raise IncorrectFunctionParameterTypeError(
+                "autosave_path", "str", type(autosave_path).__name__
+            )
+
         self.__backup = json
         self.active_json = copy.deepcopy(json)
+        self.__is_autosaving = autosave
+        if self.__is_autosaving:
+            if autosave_path == None:
+                raise ValueError(
+                    "If autosaving is enabled, 'autosave_path' parameter needs to be specified."
+                )
+            if autosave_path == "":
+                raise ValueError("Autosaving path is equal to an empty string.")
+            self.__autosave_path = autosave_path
         self.__service = service()
 
     @property
@@ -58,6 +78,13 @@ class JsonObjectParser:
         Returns initial object (without any recent changes)
         """
         return self.__backup
+
+    @property
+    def autosave_path(self) -> Union[str, None]:
+        if self.__is_autosaving:
+            return self.__autosave_path
+        else:
+            return None
 
     def get_key_value(self, json_path: str) -> any:
         """
@@ -232,6 +259,12 @@ class JsonObjectParser:
                     return json_content
             temp.update(append_value)
             self.active_json = json_content
+            if self.__is_autosaving:
+                if os.path.exists(self.__autosave_path):
+                    create_file = False
+                else:
+                    create_file = True
+                self.save_to_file(self.__autosave_path, create_file=create_file)
             return json_content
 
     def update_value(
@@ -370,6 +403,12 @@ class JsonObjectParser:
                         )
                 temp.update({key_or_index: new_value})
                 self.active_json = json_content
+                if self.__is_autosaving:
+                    if os.path.exists(self.__autosave_path):
+                        create_file = False
+                    else:
+                        create_file = True
+                    self.save_to_file(self.__autosave_path, create_file=create_file)
                 return json_content
 
     def delete(self, json_path: str, key_or_index: Union[str, int]) -> dict:
@@ -473,6 +512,12 @@ class JsonObjectParser:
                     )
                 del temp[key_or_index]
                 self.active_json = json_content
+                if self.__is_autosaving:
+                    if os.path.exists(self.__autosave_path):
+                        create_file = False
+                    else:
+                        create_file = True
+                    self.save_to_file(self.__autosave_path, create_file=create_file)
                 return json_content
 
     def reset(self, discard_active_object: bool = False) -> dict:
