@@ -3,3 +3,5 @@
 .gitignore export-ignore
 /data_tests export-ignore
 /.github export-ignore
+/docs_chunks export-ignore
+/compile_docs.py export-ignore

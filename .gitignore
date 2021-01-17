@@ -19,9 +19,6 @@
 #Test files
 /test.py
 
-# Temp config file
-/*.config.md
-
 /deploy.py
 
 
